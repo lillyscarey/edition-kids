@@ -1,0 +1,242 @@
+export type Topic = {
+  id: string
+  label: string
+  emoji: string
+  category: string
+  subcategory?: string
+  colorClass: string       // Tailwind bg class for selected state
+  borderClass: string      // Tailwind border class for selected state
+  textClass: string        // Tailwind text class for category label
+  groupLabel: string
+}
+
+export const TOPICS: Topic[] = [
+  // Technology
+  {
+    id: 'space',
+    label: 'Space & Rockets',
+    emoji: '🚀',
+    category: 'TECHNOLOGY',
+    subcategory: 'tech_space',
+    colorClass: 'bg-blue-100',
+    borderClass: 'border-blue-400',
+    textClass: 'text-blue-600',
+    groupLabel: 'Technology',
+  },
+  {
+    id: 'inventions',
+    label: 'Inventions & Tech',
+    emoji: '💡',
+    category: 'TECHNOLOGY',
+    subcategory: 'tech_ai',
+    colorClass: 'bg-blue-100',
+    borderClass: 'border-blue-400',
+    textClass: 'text-blue-600',
+    groupLabel: 'Technology',
+  },
+  {
+    id: 'gadgets',
+    label: 'Gadgets & Robots',
+    emoji: '🤖',
+    category: 'TECHNOLOGY',
+    subcategory: 'tech_hardware',
+    colorClass: 'bg-blue-100',
+    borderClass: 'border-blue-400',
+    textClass: 'text-blue-600',
+    groupLabel: 'Technology',
+  },
+
+  // Science
+  {
+    id: 'animals',
+    label: 'Animals & Nature',
+    emoji: '🐾',
+    category: 'SCIENCE',
+    subcategory: 'sci_biology',
+    colorClass: 'bg-green-100',
+    borderClass: 'border-green-400',
+    textClass: 'text-green-600',
+    groupLabel: 'Science',
+  },
+  {
+    id: 'earth',
+    label: 'Planet Earth',
+    emoji: '🌍',
+    category: 'SCIENCE',
+    subcategory: 'sci_earth',
+    colorClass: 'bg-green-100',
+    borderClass: 'border-green-400',
+    textClass: 'text-green-600',
+    groupLabel: 'Science',
+  },
+  {
+    id: 'cool_science',
+    label: 'Cool Science',
+    emoji: '🔬',
+    category: 'SCIENCE',
+    subcategory: 'sci_research',
+    colorClass: 'bg-green-100',
+    borderClass: 'border-green-400',
+    textClass: 'text-green-600',
+    groupLabel: 'Science',
+  },
+  {
+    id: 'energy',
+    label: 'Energy & Environment',
+    emoji: '🌱',
+    category: 'SCIENCE',
+    subcategory: 'sci_energy',
+    colorClass: 'bg-green-100',
+    borderClass: 'border-green-400',
+    textClass: 'text-green-600',
+    groupLabel: 'Science',
+  },
+
+  // Sports
+  {
+    id: 'sports_all',
+    label: 'Sports (All)',
+    emoji: '🏅',
+    category: 'SPORTS',
+    colorClass: 'bg-orange-100',
+    borderClass: 'border-orange-400',
+    textClass: 'text-orange-600',
+    groupLabel: 'Sports',
+  },
+  {
+    id: 'football',
+    label: 'Football',
+    emoji: '🏈',
+    category: 'SPORTS',
+    subcategory: 'sports_nfl',
+    colorClass: 'bg-orange-100',
+    borderClass: 'border-orange-400',
+    textClass: 'text-orange-600',
+    groupLabel: 'Sports',
+  },
+  {
+    id: 'basketball',
+    label: 'Basketball',
+    emoji: '🏀',
+    category: 'SPORTS',
+    subcategory: 'sports_nba',
+    colorClass: 'bg-orange-100',
+    borderClass: 'border-orange-400',
+    textClass: 'text-orange-600',
+    groupLabel: 'Sports',
+  },
+  {
+    id: 'baseball',
+    label: 'Baseball',
+    emoji: '⚾',
+    category: 'SPORTS',
+    subcategory: 'sports_mlb',
+    colorClass: 'bg-orange-100',
+    borderClass: 'border-orange-400',
+    textClass: 'text-orange-600',
+    groupLabel: 'Sports',
+  },
+  {
+    id: 'soccer',
+    label: 'Soccer',
+    emoji: '⚽',
+    category: 'SPORTS',
+    subcategory: 'sports_soccer',
+    colorClass: 'bg-orange-100',
+    borderClass: 'border-orange-400',
+    textClass: 'text-orange-600',
+    groupLabel: 'Sports',
+  },
+
+  // Culture
+  {
+    id: 'movies',
+    label: 'Movies & Shows',
+    emoji: '🎬',
+    category: 'CULTURE',
+    subcategory: 'culture_film_tv',
+    colorClass: 'bg-purple-100',
+    borderClass: 'border-purple-400',
+    textClass: 'text-purple-600',
+    groupLabel: 'Culture',
+  },
+  {
+    id: 'music',
+    label: 'Music',
+    emoji: '🎵',
+    category: 'CULTURE',
+    subcategory: 'culture_music',
+    colorClass: 'bg-purple-100',
+    borderClass: 'border-purple-400',
+    textClass: 'text-purple-600',
+    groupLabel: 'Culture',
+  },
+  {
+    id: 'food',
+    label: 'Food & Cooking',
+    emoji: '🍕',
+    category: 'CULTURE',
+    subcategory: 'culture_food',
+    colorClass: 'bg-purple-100',
+    borderClass: 'border-purple-400',
+    textClass: 'text-purple-600',
+    groupLabel: 'Culture',
+  },
+  {
+    id: 'books',
+    label: 'Books & Stories',
+    emoji: '📚',
+    category: 'CULTURE',
+    subcategory: 'culture_books',
+    colorClass: 'bg-purple-100',
+    borderClass: 'border-purple-400',
+    textClass: 'text-purple-600',
+    groupLabel: 'Culture',
+  },
+  {
+    id: 'art',
+    label: 'Art & Design',
+    emoji: '🎨',
+    category: 'CULTURE',
+    subcategory: 'culture_art',
+    colorClass: 'bg-purple-100',
+    borderClass: 'border-purple-400',
+    textClass: 'text-purple-600',
+    groupLabel: 'Culture',
+  },
+
+  // World
+  {
+    id: 'world',
+    label: 'World Explorer',
+    emoji: '🌍',
+    category: 'WORLD',
+    subcategory: 'world_climate',
+    colorClass: 'bg-yellow-100',
+    borderClass: 'border-yellow-400',
+    textClass: 'text-yellow-600',
+    groupLabel: 'World',
+  },
+
+  // Health
+  {
+    id: 'health',
+    label: 'Health & Fitness',
+    emoji: '💪',
+    category: 'HEALTH',
+    subcategory: 'health_wellness',
+    colorClass: 'bg-pink-100',
+    borderClass: 'border-pink-400',
+    textClass: 'text-pink-600',
+    groupLabel: 'Health',
+  },
+]
+
+export const TOPIC_GROUPS = [
+  'Technology',
+  'Science',
+  'Sports',
+  'Culture',
+  'World',
+  'Health',
+] as const

@@ -19,14 +19,15 @@ Font.register({
   ],
 })
 
-// ── Custom icon images (served from /public/images/) ─────────────────────────
+// ── Custom icon images for PDF (white-composited — react-pdf doesn't support PNG alpha) ──
+// Web UI uses /images/*.png (transparent). PDF uses /images/pdf/*.png (white background).
 const EMOJIS = {
-  newspaper: '/images/icon-newspaper.png',
-  rocket:    '/images/icon-rocket.png',
-  palette:   '/images/icon-palette.png',
-  telescope: '/images/icon-telescope.png',
-  moon:      '/images/icon-moon.png',
-  guitar:    '/images/icon-guitar.png',
+  newspaper: '/images/pdf/icon-newspaper.png',
+  rocket:    '/images/pdf/icon-rocket.png',
+  palette:   '/images/pdf/icon-palette.png',
+  telescope: '/images/pdf/icon-telescope.png',
+  moon:      '/images/pdf/icon-moon.png',
+  guitar:    '/images/pdf/icon-guitar.png',
 }
 
 // ── Category colors ───────────────────────────────────────────────────────────
@@ -77,7 +78,7 @@ function truncateToSentences(text: string, max = 4): string {
 // ── Styles ───────────────────────────────────────────────────────────────────
 const PAGE_H_PAD = 44
 const PAGE_TOP_PAD = 36
-const PAGE_BG = '#FFFDF5'
+const PAGE_BG = '#faf9f6'
 
 const styles = StyleSheet.create({
   page: {
@@ -271,8 +272,9 @@ export default function KidsNewspaperPDF({ articles, userName, date, imageBaseUr
             <Image src={img(EMOJIS.rocket)}    style={{ width: 46, height: 46 }} />
           </View>
 
-          {/* Center: title + date */}
+          {/* Center: logo + name + date */}
           <View style={styles.mastheadCenter}>
+            <Image src={img('/images/logo.png')} style={{ width: 160, height: 107, marginBottom: 4 }} />
             <Text style={styles.mastheadTitle}>{userName}&apos;s Daily Edition</Text>
             <Text style={styles.mastheadDate}>{date}</Text>
           </View>
