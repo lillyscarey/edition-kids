@@ -88,11 +88,32 @@ export default function OnboardingPage() {
         } catch (err) {
           const msg = err instanceof Error ? err.message : ''
           if (/403/.test(msg)) {
-            setPlanLimitHit(true)
-            setLoading(false)
-            return
+            // Plan-limit hit. The backend already has a briefing for this
+            // account but it's missing from user_metadata. Discover it via
+            // GET /api/briefings and reuse it instead of failing.
+            try {
+              const list = await apiFetch('/api/briefings')
+              const items: Array<{ id?: string; briefing_id?: string }> =
+                Array.isArray(list) ? list : (list?.briefings ?? list?.items ?? [])
+              const recoveredId = items
+                .map(b => b?.id ?? b?.briefing_id)
+                .find((id): id is string => typeof id === 'string' && id.length > 0)
+
+              if (recoveredId) {
+                briefing = { id: recoveredId }
+              } else {
+                setPlanLimitHit(true)
+                setLoading(false)
+                return
+              }
+            } catch {
+              setPlanLimitHit(true)
+              setLoading(false)
+              return
+            }
+          } else {
+            throw err
           }
-          throw err
         }
       }
 
