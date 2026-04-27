@@ -303,32 +303,47 @@ export default function DashboardPage() {
       // Auto-migration: user has a legacy briefing_id but no papers rows yet.
       // Note: Supabase JS never throws on query errors — it returns { data, error }.
       // The synthetic fallback must live in the else branch, not a catch block.
+      //
+      // Critical guard: only run this for genuine legacy users — never for
+      // users who deleted their last paper. The delete flow inserts into
+      // archived_briefings, so if a row exists there for this briefing_id,
+      // the user explicitly removed it and we must not resurrect it.
       const legacyBriefingId = user.user_metadata?.briefing_id
       if (loadedPapers.length === 0 && legacyBriefingId) {
-        const childName = user.user_metadata?.name ?? 'My Paper'
-        const syntheticPaper: Paper = {
-          id: 'legacy',
-          user_id: user.id,
-          briefing_id: legacyBriefingId,
-          child_name: childName,
-          reading_level: 'ages_8_10',
-          topics: [],
-          created_at: new Date().toISOString(),
+        const { data: archived } = await supabase
+          .from('archived_briefings')
+          .select('briefing_id')
+          .eq('briefing_id', legacyBriefingId)
+          .limit(1)
+
+        const wasDeleted = (archived?.length ?? 0) > 0
+
+        if (!wasDeleted) {
+          const childName = user.user_metadata?.name ?? 'My Paper'
+          const syntheticPaper: Paper = {
+            id: 'legacy',
+            user_id: user.id,
+            briefing_id: legacyBriefingId,
+            child_name: childName,
+            reading_level: 'ages_8_10',
+            topics: [],
+            created_at: new Date().toISOString(),
+          }
+
+          // Try to write the row into the papers table (migration may not have run yet)
+          const { data: upserted } = await supabase
+            .from('papers')
+            .upsert(
+              { user_id: user.id, briefing_id: legacyBriefingId, child_name: childName, reading_level: 'ages_8_10' },
+              { onConflict: 'briefing_id' }
+            )
+            .select()
+            .single()
+
+          // Whether the upsert succeeded or not, always populate loadedPapers
+          // so the dashboard never loops back to /onboarding
+          loadedPapers = [upserted ?? syntheticPaper]
         }
-
-        // Try to write the row into the papers table (migration may not have run yet)
-        const { data: upserted } = await supabase
-          .from('papers')
-          .upsert(
-            { user_id: user.id, briefing_id: legacyBriefingId, child_name: childName, reading_level: 'ages_8_10' },
-            { onConflict: 'briefing_id' }
-          )
-          .select()
-          .single()
-
-        // Whether the upsert succeeded or not, always populate loadedPapers
-        // so the dashboard never loops back to /onboarding
-        loadedPapers = [upserted ?? syntheticPaper]
       }
 
       setPapers(loadedPapers)
