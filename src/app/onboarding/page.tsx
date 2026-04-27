@@ -66,10 +66,16 @@ export default function OnboardingPage() {
       const { data: { user } } = await supabase.auth.getUser()
       const name = childName.trim()
 
-      // 1. Create the briefing — if the plan limit is hit (403), fall back to
-      //    the existing briefing on the account (the old one from a deleted paper).
+      // 1. Resolve briefing ID.
+      //    Priority: recyclable_briefing_id (left by a deleted paper on a capped
+      //    plan) → create a new briefing → 403 is a hard failure.
+      const recyclableId = user?.user_metadata?.recyclable_briefing_id as string | undefined
       let briefing: { id: string }
-      try {
+
+      if (recyclableId) {
+        // Reuse the backend briefing from the deleted paper — no new POST needed
+        briefing = { id: recyclableId }
+      } else {
         briefing = await apiFetch('/api/briefings', {
           method: 'POST',
           body: JSON.stringify({
@@ -80,16 +86,6 @@ export default function OnboardingPage() {
             tone: 'kids_friendly',
           }),
         })
-      } catch (postErr) {
-        // 403 = plan limit: reuse the existing briefing instead of creating a new one
-        if (postErr instanceof Error && postErr.message.includes('403')) {
-          const existing = await apiFetch('/api/briefings')
-          const list = Array.isArray(existing) ? existing : (existing.briefings ?? existing.data ?? [])
-          if (!list.length) throw postErr   // no existing briefing to fall back to
-          briefing = { id: String(list[0].id ?? list[0].briefing_id) }
-        } else {
-          throw postErr
-        }
       }
 
       // 2. Add selected topics
@@ -133,9 +129,9 @@ export default function OnboardingPage() {
           })
         }
 
-        // 4. Store briefing_id in user_metadata (for legacy compatibility)
+        // 4. Store briefing_id in user_metadata; clear recyclable_briefing_id now used
         await supabase.auth.updateUser({
-          data: { briefing_id: briefing.id },
+          data: { briefing_id: briefing.id, recyclable_briefing_id: null },
         })
       }
 
