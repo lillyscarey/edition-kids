@@ -2,17 +2,21 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api'
 import { TOPICS, TOPIC_GROUPS } from '@/lib/topics'
+import Nav from '@/components/Nav'
 
 export default function OnboardingPage() {
   const router = useRouter()
+  const [userName, setUserName] = useState('')
   const [childName, setChildName] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
   const [error, setError] = useState('')
+  const [planLimitHit, setPlanLimitHit] = useState(false)
 
   // If user already has papers, send them to dashboard
   useEffect(() => {
@@ -20,6 +24,8 @@ export default function OnboardingPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/sign-in'); return }
+
+      setUserName(user.user_metadata?.name ?? '')
 
       // Only redirect if the papers table actually has rows.
       // We no longer use briefing_id as a redirect guard — it's just the
@@ -68,16 +74,26 @@ export default function OnboardingPage() {
       if (existingBriefingId) {
         briefing = { id: existingBriefingId }
       } else {
-        briefing = await apiFetch('/api/briefings', {
-          method: 'POST',
-          body: JSON.stringify({
-            name: `${name}'s Paper`,
-            delivery_time: '07:00',
-            delivery_days: [1, 2, 3, 4, 5],
-            page_count: 2,
-            tone: 'kids_friendly',
-          }),
-        })
+        try {
+          briefing = await apiFetch('/api/briefings', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: `${name}'s Paper`,
+              delivery_time: '07:00',
+              delivery_days: [1, 2, 3, 4, 5],
+              page_count: 2,
+              tone: 'kids_friendly',
+            }),
+          })
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : ''
+          if (/403/.test(msg)) {
+            setPlanLimitHit(true)
+            setLoading(false)
+            return
+          }
+          throw err
+        }
       }
 
       // 2. Add selected topics
@@ -136,21 +152,55 @@ export default function OnboardingPage() {
 
   if (checking) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-page">
-        <p className="text-[#4a4a48] text-lg animate-pulse">Loading...</p>
-      </main>
+      <div className="min-h-screen bg-page font-albert">
+        <Nav userName={userName || undefined} />
+        <div className="flex items-center justify-center pt-32">
+          <p className="text-[#4a4a48] text-lg animate-pulse">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (planLimitHit) {
+    return (
+      <div className="min-h-screen bg-page font-albert">
+        <Nav userName={userName} />
+        <main className="max-w-xl mx-auto py-16 px-4 text-center">
+          <h2 className="font-baskerville italic text-3xl text-[#1c1c1a] mb-4">
+            We couldn&apos;t create a new paper
+          </h2>
+          <p className="text-[#4a4a48] text-base leading-relaxed mb-8">
+            Your account has reached the maximum number of papers allowed on the
+            current plan. Your existing papers and archive of past editions still
+            work as expected.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/dashboard"
+              className="px-8 py-3 bg-[#4f6b4f] text-white font-bold rounded-full hover:bg-[#3d5a3d] transition-colors text-[11px] uppercase tracking-[1.5px]"
+            >
+              Back to dashboard
+            </Link>
+            <Link
+              href="/archive"
+              className="px-8 py-3 border border-[#ded4c4] text-[#1c1c1a] font-bold rounded-full hover:border-[#1c1c1a] transition-colors text-[11px] uppercase tracking-[1.5px]"
+            >
+              View archive
+            </Link>
+          </div>
+        </main>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen bg-page py-12 px-4 font-albert">
+    <div className="min-h-screen bg-page font-albert">
+      <Nav userName={userName} />
+      <main className="py-12 px-4">
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="flex justify-center mb-6">
-            <img src="/images/logo.png" alt="Edition Kids" className="h-20 w-auto" />
-          </div>
           <h1 className="font-baskerville italic text-3xl sm:text-4xl text-[#1c1c1a] mb-2">
             Let&apos;s set up your first paper
           </h1>
@@ -234,9 +284,17 @@ export default function OnboardingPage() {
               {loading ? 'Setting up…' : 'Build My Paper →'}
             </button>
           </div>
+
+          <Link
+            href="/dashboard"
+            className="text-[11px] font-semibold uppercase tracking-[1px] text-[#4a4a48] hover:text-[#1c1c1a] transition-colors mt-2"
+          >
+            Maybe later
+          </Link>
         </div>
 
       </div>
-    </main>
+      </main>
+    </div>
   )
 }

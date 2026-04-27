@@ -6,9 +6,11 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api'
 import { TOPICS, TOPIC_GROUPS } from '@/lib/topics'
+import Nav from '@/components/Nav'
 
 export default function AddPaperPage() {
   const router = useRouter()
+  const [userName, setUserName] = useState('')
   const [childName, setChildName] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
@@ -21,6 +23,8 @@ export default function AddPaperPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/sign-in'); return }
+
+      setUserName(user.user_metadata?.name ?? '')
 
       try {
         const { data } = await supabase.from('papers').select('id')
@@ -126,14 +130,19 @@ export default function AddPaperPage() {
 
   if (checking) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-page">
-        <p className="text-[#4a4a48] text-lg animate-pulse">Loading...</p>
-      </main>
+      <div className="min-h-screen bg-page font-albert">
+        <Nav userName={userName || undefined} />
+        <div className="flex items-center justify-center pt-32">
+          <p className="text-[#4a4a48] text-lg animate-pulse">Loading...</p>
+        </div>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen bg-page py-12 px-4 font-albert">
+    <div className="min-h-screen bg-page font-albert">
+      <Nav userName={userName} />
+      <main className="py-12 px-4">
       <div className="max-w-2xl mx-auto">
 
         {/* Header */}
@@ -151,9 +160,6 @@ export default function AddPaperPage() {
             <p className="text-[#4a4a48] text-sm mt-1">
               Paper {paperCount + 1} of 10 maximum
             </p>
-          </div>
-          <div className="flex justify-end">
-            <img src="/images/logo.png" alt="Edition Kids" className="h-14 w-auto" />
           </div>
         </div>
 
@@ -235,6 +241,7 @@ export default function AddPaperPage() {
         </div>
 
       </div>
-    </main>
+      </main>
+    </div>
   )
 }

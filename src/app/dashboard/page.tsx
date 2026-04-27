@@ -207,13 +207,19 @@ export default function DashboardPage() {
       setPapers(remaining)
       setDeletingPaper(null)
 
-      // 5. Select another paper, or go to onboarding if none left
+      // 5. Select another paper, or fall back to in-place empty state
       if (selectedPaper?.id === paper.id) {
         if (remaining.length > 0) {
           setSelectedPaper(remaining[0])
           await loadPaperEditions(remaining[0])
         } else {
-          router.push('/onboarding')
+          setSelectedPaper(null)
+          setEditions([])
+          setArticles([])
+          setSelectedEditionId(null)
+          setPaperState('empty')
+          setErrorMsg('')
+          showToast(`${paper.child_name}'s paper has been deleted.`)
           return
         }
       }
@@ -318,14 +324,15 @@ export default function DashboardPage() {
         loadedPapers = [upserted ?? syntheticPaper]
       }
 
+      setPapers(loadedPapers)
+      setInitLoading(false)
+
       if (loadedPapers.length === 0) {
-        router.push('/onboarding')
+        // Empty-state branch handles the render — no redirect.
         return
       }
 
-      setPapers(loadedPapers)
       setSelectedPaper(loadedPapers[0])
-      setInitLoading(false)
 
       // Load editions for the first paper
       await loadPaperEditions(loadedPapers[0])
@@ -373,6 +380,54 @@ export default function DashboardPage() {
         <div className="flex items-center justify-center pt-32">
           <p className="text-[#4a4a48] text-lg animate-pulse">Loading your papers…</p>
         </div>
+      </div>
+    )
+  }
+
+  // ── Empty state — no papers yet ────────────────────────────────────────────
+  if (papers.length === 0) {
+    return (
+      <div className="min-h-screen bg-page font-albert">
+        <Nav userName={userName} />
+        <div className="max-w-xl mx-auto px-4 pt-20 pb-16 text-center">
+          <div className="mb-6">
+            <img
+              src="/images/icon-newspaper.png"
+              alt=""
+              width={88}
+              height={88}
+              className="mx-auto opacity-40"
+            />
+          </div>
+          <h1 className="font-baskerville italic text-3xl sm:text-4xl text-[#1c1c1a] mb-3">
+            Welcome back, {userName}.
+          </h1>
+          <p className="text-[#4a4a48] text-base mb-8 leading-relaxed">
+            You don&apos;t have any papers yet. Create one to start receiving a fresh,
+            kid-friendly edition every morning.
+          </p>
+          <Link
+            href="/onboarding"
+            className="inline-block px-8 py-3 bg-[#4f6b4f] text-white font-bold rounded-full hover:bg-[#3d5a3d] transition-colors text-[11px] uppercase tracking-[1.5px]"
+          >
+            Create my first paper
+          </Link>
+          <div className="mt-6">
+            <Link
+              href="/archive"
+              className="text-[11px] font-semibold uppercase tracking-[1px] text-[#4a4a48] hover:text-[#1c1c1a] transition-colors"
+            >
+              View archive of past editions →
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Toast ── */}
+        {toast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1c1c1a] text-white text-xs font-semibold px-5 py-3 rounded-full shadow-lg font-albert whitespace-nowrap max-w-[90vw] text-center">
+            {toast}
+          </div>
+        )}
       </div>
     )
   }
