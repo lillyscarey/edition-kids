@@ -181,15 +181,15 @@ export default function DashboardPage() {
     try {
       const supabase = createClient()
 
-      // 1. Archive the briefing so past editions remain accessible
       if (paper.id !== 'legacy') {
+        // 1. Archive the briefing (best-effort — don't block delete if table missing)
         await supabase.from('archived_briefings').insert({
           user_id: paper.user_id,
           briefing_id: paper.briefing_id,
           child_name: paper.child_name,
         })
 
-        // 2. Hard-delete the paper record (frees the slot)
+        // 2. Hard-delete the paper record
         const { error: deleteErr } = await supabase
           .from('papers')
           .delete()
@@ -198,12 +198,20 @@ export default function DashboardPage() {
         if (deleteErr) throw new Error(deleteErr.message)
       }
 
-      // 3. Update local state
+      // 3. Clear legacy briefing_id from user metadata if it matches this paper.
+      //    Without this, onboarding would see briefing_id and redirect back to
+      //    dashboard, making deletion appear to not work.
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      if (currentUser?.user_metadata?.briefing_id === paper.briefing_id) {
+        await supabase.auth.updateUser({ data: { briefing_id: null } })
+      }
+
+      // 4. Update local state
       const remaining = papers.filter(p => p.id !== paper.id)
       setPapers(remaining)
       setDeletingPaper(null)
 
-      // 4. Select another paper or go to onboarding if none left
+      // 5. Select another paper, or go to onboarding if none left
       if (selectedPaper?.id === paper.id) {
         if (remaining.length > 0) {
           setSelectedPaper(remaining[0])
@@ -214,8 +222,8 @@ export default function DashboardPage() {
         }
       }
 
-      // 5. Toast confirmation
-      showToast(`${paper.child_name}'s paper has been deleted. Past editions are saved in your archive.`)
+      // 6. Toast confirmation
+      showToast(`${paper.child_name}'s paper has been deleted.`)
 
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : 'Failed to delete. Please try again.')
