@@ -27,7 +27,6 @@ Font.register({
 Font.registerHyphenationCallback(word => [word])
 
 // ── Custom icon images for PDF (white-composited — react-pdf doesn't support PNG alpha) ──
-// Web UI uses /images/*.png (transparent). PDF uses /images/pdf/*.png (white background).
 const EMOJIS = {
   newspaper: '/images/pdf/icon-newspaper.png',
   rocket:    '/images/pdf/icon-rocket.png',
@@ -37,136 +36,143 @@ const EMOJIS = {
   guitar:    '/images/pdf/icon-guitar.png',
 }
 
-// ── Category colors ───────────────────────────────────────────────────────────
-const CATEGORY_COLORS: Record<string, string> = {
-  TECHNOLOGY: '#DBEAFE',
-  SCIENCE:    '#DCFCE7',
-  SPORTS:     '#FFEDD5',
-  CULTURE:    '#F3E8FF',
-  WORLD:      '#FEF9C3',
-  HEALTH:     '#FCE7F3',
+// ── Palette ──────────────────────────────────────────────────────────────────
+// Derived from the "How it Works" paper-craft illustrations (warm cream
+// backgrounds, muted earthy accents). Tweak any value here to retune the
+// whole document.
+const PALETTE = {
+  pageBg:      '#F5EFE0', // warm cream — page background
+  cardBg:      '#FBF7EC', // slightly lighter paper tone for cards
+  navy:        '#3F5872', // dusty navy — masthead title, technology
+  navyTint:    '#D8E0EA',
+  green:       '#3D5A3F', // muted green — business
+  greenTint:   '#DCE5D8',
+  terracotta:  '#9A4735', // warm rust — health, sports
+  terraTint:   '#F0D9CE',
+  mustard:     '#8C6A1A', // dark mustard — science, world
+  mustardTint: '#F5E6BD',
+  brown:       '#6B4F2C', // warm brown — culture, fallback
+  beige:       '#EBE0CE',
+  divider:     '#C9BFAA', // muted earthy rule
+  bodyText:    '#2A2A28',
+  mutedText:   '#7A7568',
 }
 
-const CATEGORY_TEXT_COLORS: Record<string, string> = {
-  TECHNOLOGY: '#1D4ED8',
-  SCIENCE:    '#15803D',
-  SPORTS:     '#C2410C',
-  CULTURE:    '#7E22CE',
-  WORLD:      '#A16207',
-  HEALTH:     '#BE185D',
+// ── Category → theme map (one place to edit) ─────────────────────────────────
+type CategoryTheme = { bg: string; text: string; label: string }
+
+const CATEGORY_THEME: Record<string, CategoryTheme> = {
+  TECHNOLOGY: { bg: PALETTE.navyTint,    text: PALETTE.navy,       label: 'Technology' },
+  BUSINESS:   { bg: PALETTE.greenTint,   text: PALETTE.green,      label: 'Business'   },
+  SCIENCE:    { bg: PALETTE.mustardTint, text: PALETTE.mustard,    label: 'Science'    },
+  HEALTH:     { bg: PALETTE.terraTint,   text: PALETTE.terracotta, label: 'Health'     },
+  SPORTS:     { bg: PALETTE.terraTint,   text: PALETTE.terracotta, label: 'Sports'     },
+  CULTURE:    { bg: PALETTE.beige,       text: PALETTE.brown,      label: 'Culture'    },
+  WORLD:      { bg: PALETTE.mustardTint, text: PALETTE.mustard,    label: 'World'      },
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  TECHNOLOGY: 'Technology',
-  SCIENCE:    'Science',
-  SPORTS:     'Sports',
-  CULTURE:    'Culture',
-  WORLD:      'World',
-  HEALTH:     'Health',
+const FALLBACK_THEME: CategoryTheme = {
+  bg: PALETTE.beige, text: PALETTE.brown, label: 'News',
 }
 
-function getCategoryColor(category: string) {
-  return CATEGORY_COLORS[category?.toUpperCase()] ?? '#F3F4F6'
-}
-function getCategoryTextColor(category: string) {
-  return CATEGORY_TEXT_COLORS[category?.toUpperCase()] ?? '#374151'
-}
-function getCategoryLabel(category: string) {
-  return CATEGORY_LABELS[category?.toUpperCase()] ?? category
+function themeFor(category: string): CategoryTheme {
+  return CATEGORY_THEME[category?.toUpperCase()] ?? {
+    ...FALLBACK_THEME,
+    label: category || FALLBACK_THEME.label,
+  }
 }
 
-// ── Styles ───────────────────────────────────────────────────────────────────
+// ── Layout constants ─────────────────────────────────────────────────────────
 const PAGE_H_PAD = 44
 const PAGE_TOP_PAD = 36
-const PAGE_BG = '#faf9f6'
 
+// ── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Nunito',
     paddingTop: PAGE_TOP_PAD,
     paddingBottom: 44,
     paddingHorizontal: PAGE_H_PAD,
-    backgroundColor: PAGE_BG,
+    backgroundColor: PALETTE.pageBg,
   },
 
-  // ── Masthead — white background, thin bottom rule only ────────────────────
+  // ── Masthead ──────────────────────────────────────────────────────────────
   mastheadOuter: {
     marginTop: -PAGE_TOP_PAD,
     marginHorizontal: -PAGE_H_PAD,
-    paddingTop: PAGE_TOP_PAD,
+    paddingTop: PAGE_TOP_PAD - 6,
     paddingHorizontal: PAGE_H_PAD,
-    paddingBottom: 14,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#B0BEC5',
+    paddingBottom: 12,
+    backgroundColor: PALETTE.pageBg,
     marginBottom: 14,
+  },
+  // Icons row — evenly spread across the banner above the title
+  iconRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    marginBottom: 8,
   },
-
-  // Illustration clusters — flex row, icons centered vertically
-  emojiCluster: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-
-  // Center title area
   mastheadCenter: {
-    flex: 1,
     alignItems: 'center',
     paddingHorizontal: 8,
   },
   mastheadTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 700,
-    color: '#6B8CAE',
-    letterSpacing: 0.3,
+    color: PALETTE.navy,
+    letterSpacing: 0.4,
     textAlign: 'center',
   },
   mastheadDate: {
-    fontSize: 8,
-    color: '#9CA3AF',
+    fontSize: 8.5,
+    color: PALETTE.mutedText,
     textAlign: 'center',
-    marginTop: 3,
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
+  mastheadDivider: {
+    marginTop: 10,
+    height: 1,
+    backgroundColor: PALETTE.divider,
   },
 
-  // Daily Fun Fact section
+  // Daily Fun Fact — warm beige with mustard accent
   funFactBox: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: 5,
+    backgroundColor: PALETTE.beige,
+    borderRadius: 6,
     borderLeftWidth: 3,
-    borderLeftColor: '#1D4ED8',
+    borderLeftColor: PALETTE.mustard,
     paddingHorizontal: 11,
-    paddingVertical: 7,
+    paddingVertical: 8,
     marginBottom: 12,
   },
   funFactLabel: {
     fontSize: 7,
     fontWeight: 700,
-    color: '#1D4ED8',
+    color: PALETTE.mustard,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 3,
   },
   funFactText: {
     fontSize: 9.5,
-    color: '#1E3A8A',
+    color: PALETTE.navy,
     lineHeight: 1.45,
   },
 
   // Article card
   articleCard: {
-    marginBottom: 8,
-    borderRadius: 5,
+    marginBottom: 9,
+    borderRadius: 6,
     overflow: 'hidden',
     border: 1,
-    borderColor: '#E5E7EB',
+    borderColor: PALETTE.divider,
   },
   articleHeader: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -174,34 +180,34 @@ const styles = StyleSheet.create({
   categoryLabel: {
     fontSize: 7,
     fontWeight: 700,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
   },
   articleDate: {
     fontSize: 7,
-    color: '#9CA3AF',
+    color: PALETTE.mutedText,
   },
   articleBody: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: PALETTE.cardBg,
     paddingHorizontal: 10,
-    paddingTop: 5,
-    paddingBottom: 6,
+    paddingTop: 6,
+    paddingBottom: 7,
   },
   headline: {
     fontSize: 10.5,
     fontWeight: 700,
-    color: '#111827',
+    color: PALETTE.bodyText,
     marginBottom: 3,
     lineHeight: 1.3,
   },
   bodyText: {
     fontSize: 8,
-    color: '#374151',
+    color: PALETTE.bodyText,
     lineHeight: 1.5,
   },
   sourceText: {
     fontSize: 6.5,
-    color: '#9CA3AF',
+    color: PALETTE.mutedText,
     marginTop: 3,
   },
 
@@ -215,16 +221,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: PALETTE.divider,
     paddingTop: 5,
   },
   footerText: {
     fontSize: 7.5,
-    color: '#9CA3AF',
+    color: PALETTE.mutedText,
   },
   pageNumber: {
     fontSize: 7.5,
-    color: '#9CA3AF',
+    color: PALETTE.mutedText,
   },
 })
 
@@ -243,11 +249,9 @@ export default function KidsNewspaperPDF({ articles, userName, date, imageBaseUr
   const img = (path: string) => `${imageBaseUrl}${path}`
   const DYK_MARKER = '💡 Did You Know?'
 
-  // Filter to articles published within the last 24 hours, then take up to 4
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000
-  const recent = articles.filter(a => new Date(a.published_at).getTime() > cutoff)
-  const pool = recent.length >= 2 ? recent : articles
-  const displayArticles = pool.slice(0, 4)
+  // Trust the caller — dashboard already filters by topic + recency and caps
+  // at 4 articles. PDF just renders what it receives.
+  const displayArticles = articles
 
   // Pull the best fun fact from any article that has one
   const funFact = displayArticles
@@ -265,26 +269,24 @@ export default function KidsNewspaperPDF({ articles, userName, date, imageBaseUr
         {/* ── Masthead ── */}
         <View style={styles.mastheadOuter}>
 
-          {/* Left cluster — flex row, centered */}
-          <View style={styles.emojiCluster}>
-            <Image src={img(EMOJIS.newspaper)} style={{ width: 46, height: 46, marginRight: 3 }} />
-            <Image src={img(EMOJIS.palette)}   style={{ width: 44, height: 44, marginRight: 3 }} />
-            <Image src={img(EMOJIS.rocket)}    style={{ width: 46, height: 46 }} />
+          {/* Icons evenly spaced across the banner */}
+          <View style={styles.iconRow}>
+            <Image src={img(EMOJIS.newspaper)} style={{ width: 38, height: 38 }} />
+            <Image src={img(EMOJIS.palette)}   style={{ width: 36, height: 36 }} />
+            <Image src={img(EMOJIS.rocket)}    style={{ width: 38, height: 38 }} />
+            <Image src={img(EMOJIS.telescope)} style={{ width: 38, height: 38 }} />
+            <Image src={img(EMOJIS.moon)}      style={{ width: 36, height: 36 }} />
+            <Image src={img(EMOJIS.guitar)}    style={{ width: 32, height: 44 }} />
           </View>
 
-          {/* Center: logo + name + date */}
+          {/* Title + date */}
           <View style={styles.mastheadCenter}>
-            <Image src={img('/images/logo.png')} style={{ width: 160, height: 107, marginBottom: 4 }} />
             <Text style={styles.mastheadTitle}>{userName}&apos;s Daily Edition</Text>
             <Text style={styles.mastheadDate}>{date}</Text>
           </View>
 
-          {/* Right cluster — flex row, centered */}
-          <View style={styles.emojiCluster}>
-            <Image src={img(EMOJIS.telescope)} style={{ width: 46, height: 46, marginRight: 3 }} />
-            <Image src={img(EMOJIS.moon)}      style={{ width: 44, height: 44, marginRight: 3 }} />
-            <Image src={img(EMOJIS.guitar)}    style={{ width: 38, height: 52 }} />
-          </View>
+          {/* Earthy divider */}
+          <View style={styles.mastheadDivider} />
 
         </View>
 
@@ -296,11 +298,9 @@ export default function KidsNewspaperPDF({ articles, userName, date, imageBaseUr
           </View>
         )}
 
-        {/* ── Articles — up to 4, truncated to 4 sentences, DYK stripped ── */}
+        {/* ── Articles ── */}
         {displayArticles.map((article) => {
-          const bgColor = getCategoryColor(article.category)
-          const textColor = getCategoryTextColor(article.category)
-          const label = getCategoryLabel(article.category)
+          const theme = themeFor(article.category)
           const publishedDate = new Date(article.published_at).toLocaleDateString('en-US', {
             month: 'short', day: 'numeric',
           })
@@ -313,9 +313,9 @@ export default function KidsNewspaperPDF({ articles, userName, date, imageBaseUr
 
           return (
             <View key={article.position} style={styles.articleCard} wrap={false}>
-              <View style={[styles.articleHeader, { backgroundColor: bgColor }]}>
-                <Text style={[styles.categoryLabel, { color: textColor }]}>
-                  {label}
+              <View style={[styles.articleHeader, { backgroundColor: theme.bg }]}>
+                <Text style={[styles.categoryLabel, { color: theme.text }]}>
+                  {theme.label}
                 </Text>
                 <Text style={styles.articleDate}>{publishedDate}</Text>
               </View>
