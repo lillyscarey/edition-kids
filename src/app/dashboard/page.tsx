@@ -73,6 +73,7 @@ export default function DashboardPage() {
 
   // Toast
   const [toast, setToast] = useState<string | null>(null)
+  const [bypassFilter, setBypassFilter] = useState(false)
 
   // ── Escape key closes modals ─────────────────────────────────────────────
   useEffect(() => {
@@ -108,15 +109,28 @@ export default function DashboardPage() {
   // This frontend only filters and caps what the API returns.
   async function loadEdition(editionId: string) {
     setPaperState('loading')
+    setBypassFilter(false)
     try {
       const data = await apiFetch(`/api/editions/${editionId}/articles`)
       const sorted: Article[] = (data.articles ?? []).sort(
         (a: Article, b: Article) => a.position - b.position
       )
-      // Strict 24-hour freshness filter — no fallback. If nothing fresh, the
-      // empty-state UI prompts the user to regenerate.
-      const cutoff = Date.now() - 24 * 60 * 60 * 1000
+      // 7-day freshness window — the backend already curates "today's" set
+      // when generating; this is just a sanity guard against stale cached
+      // articles. Was 24h but proved too tight in practice.
+      const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
       const recent = sorted.filter(a => new Date(a.published_at).getTime() > cutoff)
+      // Diagnostic: surface raw vs filtered counts so empty-state cases are
+      // debuggable from DevTools without needing to instrument further.
+      console.log('[loadEdition]', {
+        editionId,
+        rawCount: sorted.length,
+        afterFreshness: recent.length,
+        categories: Array.from(new Set(sorted.map(a => a.category))),
+        subcategories: Array.from(new Set(sorted.map(a => a.subcategory).filter(Boolean))),
+        oldestPublished: sorted[0]?.published_at,
+        newestPublished: sorted[sorted.length - 1]?.published_at,
+      })
       setArticles(recent)
       setSelectedEditionId(editionId)
       setPaperState('ready')
@@ -374,6 +388,9 @@ export default function DashboardPage() {
     const paperTopics: PaperTopic[] = selectedPaper?.topics ?? []
     if (articles.length === 0) return articles
 
+    // Escape hatch: user explicitly asked to bypass topic filter.
+    if (bypassFilter) return articles.slice(0, ARTICLE_CAP)
+
     // Legacy papers may have empty `topics` — fall back to category set
     // derived from any topic data we have. If still empty, return [] so the
     // user notices and can re-onboard rather than seeing off-topic content.
@@ -391,7 +408,7 @@ export default function DashboardPage() {
     })
 
     return filtered.slice(0, ARTICLE_CAP)
-  }, [articles, selectedPaper?.topics])
+  }, [articles, selectedPaper?.topics, bypassFilter])
 
   // ── Generating screen ──────────────────────────────────────────────────────
   if (paperState === 'generating') {
@@ -632,10 +649,89 @@ export default function DashboardPage() {
           </>
         )}
 
-        {/* Ready but empty */}
-        {paperState === 'ready' && displayArticles.length === 0 && (
-          <div className="text-center py-16 text-[#4a4a48]">No articles found for this edition.</div>
-        )}
+        {/* Ready but empty — diagnostic + escape hatches */}
+        {paperState === 'ready' && displayArticles.length === 0 && (() => {
+          const rawCount = articles.length
+          const topicCount = selectedPaper?.topics?.length ?? 0
+          const topicLabels = (selectedPaper?.topics ?? [])
+            .map(t => t.subcategory || t.category)
+            .filter(Boolean)
+            .join(', ')
+
+          // Case A: API returned nothing.
+          if (rawCount === 0) {
+            return (
+              <div className="text-center py-16">
+                <p className="text-[#4a4a48] mb-4">No articles found for this edition.</p>
+                <button
+                  onClick={handleGenerate}
+                  className="text-[11px] font-semibold uppercase tracking-[1px] text-[#4f6b4f] hover:text-[#3d5a3d] transition-colors"
+                >
+                  Try generating again →
+                </button>
+              </div>
+            )
+          }
+
+          // Case B: paper has no topics set.
+          if (topicCount === 0) {
+            return (
+              <div className="text-center py-16 max-w-md mx-auto">
+                <p className="text-[#1c1c1a] font-semibold mb-2">
+                  This paper has no topics set yet.
+                </p>
+                <p className="text-sm text-[#4a4a48] mb-5">
+                  We received {rawCount} {rawCount === 1 ? 'article' : 'articles'}, but
+                  can&apos;t match them to {selectedPaper?.child_name}&apos;s interests
+                  without topics. Set topics to personalize the paper.
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <Link
+                    href="/onboarding"
+                    className="px-5 py-2.5 bg-[#4f6b4f] text-white font-bold rounded-full hover:bg-[#3d5a3d] transition-colors text-[11px] uppercase tracking-[1px]"
+                  >
+                    Set topics
+                  </Link>
+                  <button
+                    onClick={() => setBypassFilter(true)}
+                    className="text-[11px] font-semibold uppercase tracking-[1px] text-[#4a4a48] hover:text-[#1c1c1a] transition-colors"
+                  >
+                    Show all anyway →
+                  </button>
+                </div>
+              </div>
+            )
+          }
+
+          // Case C: articles exist but none matched the topic filter.
+          return (
+            <div className="text-center py-16 max-w-md mx-auto">
+              <p className="text-[#1c1c1a] font-semibold mb-2">
+                We found {rawCount} {rawCount === 1 ? 'article' : 'articles'} today,
+                but none match the selected topics.
+              </p>
+              {topicLabels && (
+                <p className="text-xs text-[#4a4a48] mb-5">
+                  Topics: <span className="font-semibold">{topicLabels}</span>
+                </p>
+              )}
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setBypassFilter(true)}
+                  className="px-5 py-2.5 bg-[#4f6b4f] text-white font-bold rounded-full hover:bg-[#3d5a3d] transition-colors text-[11px] uppercase tracking-[1px]"
+                >
+                  Show all anyway
+                </button>
+                <Link
+                  href="/onboarding"
+                  className="text-[11px] font-semibold uppercase tracking-[1px] text-[#4a4a48] hover:text-[#1c1c1a] transition-colors"
+                >
+                  Update topics →
+                </Link>
+              </div>
+            </div>
+          )
+        })()}
 
       </div>
 
