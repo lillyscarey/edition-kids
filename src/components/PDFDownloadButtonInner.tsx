@@ -36,9 +36,17 @@ export default function PDFDownloadButtonInner({ articles, userName, date }: Pro
   }
 
   if (instance.error) {
+    if (typeof window !== 'undefined') {
+      console.error('[PDF] generation failed:', instance.error)
+    }
+    const errMsg =
+      typeof instance.error === 'string'
+        ? instance.error
+        : (instance.error as Error)?.message ?? String(instance.error)
     return (
       <button
         disabled
+        title={errMsg}
         className="flex items-center gap-2 px-5 py-2.5 border border-red-200 text-red-400 text-[11px] font-bold uppercase tracking-[1px] rounded-full opacity-70 cursor-not-allowed"
       >
         PDF failed
