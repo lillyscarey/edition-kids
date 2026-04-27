@@ -8,16 +8,22 @@ import {
   StyleSheet,
 } from '@react-pdf/renderer'
 import { Article } from '@/lib/types'
-import { NUNITO_REGULAR, NUNITO_BOLD } from '@/lib/fontData'
 
 // ── Font registration ────────────────────────────────────────────────────────
+// Use local font files served from /public/fonts/ — more reliable in production
+// than base64 data URIs. Module only loads client-side (dynamic ssr:false),
+// so window is always defined here.
+const _origin = typeof window !== 'undefined' ? window.location.origin : ''
 Font.register({
   family: 'Nunito',
   fonts: [
-    { src: NUNITO_REGULAR, fontWeight: 400 },
-    { src: NUNITO_BOLD, fontWeight: 700 },
+    { src: `${_origin}/fonts/Nunito-Regular.ttf`, fontWeight: 400 },
+    { src: `${_origin}/fonts/Nunito-Bold.ttf`,    fontWeight: 700 },
   ],
 })
+
+// Disable hyphenation — prevents "unitsPerEm" font-metrics crash in react-pdf
+Font.registerHyphenationCallback(word => [word])
 
 // ── Custom icon images for PDF (white-composited — react-pdf doesn't support PNG alpha) ──
 // Web UI uses /images/*.png (transparent). PDF uses /images/pdf/*.png (white background).
