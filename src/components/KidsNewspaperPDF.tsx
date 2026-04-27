@@ -41,8 +41,8 @@ const EMOJIS = {
 // backgrounds, muted earthy accents). Tweak any value here to retune the
 // whole document.
 const PALETTE = {
-  pageBg:      '#F5EFE0', // warm cream — page background
-  cardBg:      '#FBF7EC', // slightly lighter paper tone for cards
+  pageBg:      '#FFFFFF', // page background (white — PNGs are white-composited)
+  cardBg:      '#FBF7EC', // warm paper tone for article cards
   navy:        '#3F5872', // dusty navy — masthead title, technology
   navyTint:    '#D8E0EA',
   green:       '#3D5A3F', // muted green — business
@@ -86,6 +86,27 @@ function themeFor(category: string): CategoryTheme {
 const PAGE_H_PAD = 44
 const PAGE_TOP_PAD = 36
 
+// ── Masthead icon scatter config ─────────────────────────────────────────────
+// Each icon is absolutely positioned inside a 595pt-wide × 150pt-tall masthead.
+// Coords are in pt from the masthead's top-left. Tweak any single icon here.
+// Rotation in degrees. Only ~half the icons are rotated to avoid feeling busy.
+const MASTHEAD_HEIGHT = 150
+type IconSpot = {
+  key: keyof typeof EMOJIS
+  left: number
+  top: number
+  size: number
+  rotate?: number
+}
+const ICON_SCATTER: IconSpot[] = [
+  { key: 'newspaper', left: 60,  top: 22, size: 42, rotate: -10 },
+  { key: 'moon',      left: 175, top: 12, size: 32                  },
+  { key: 'rocket',    left: 430, top: 18, size: 46, rotate: 12 },
+  { key: 'palette',   left: 30,  top: 78, size: 38                  },
+  { key: 'telescope', left: 510, top: 70, size: 40, rotate: -8  },
+  { key: 'guitar',    left: 130, top: 92, size: 36, rotate: 14  },
+]
+
 // ── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   page: {
@@ -97,26 +118,26 @@ const styles = StyleSheet.create({
   },
 
   // ── Masthead ──────────────────────────────────────────────────────────────
+  // Outer container spans full page width via negative margins; icons inside
+  // use absolute positioning to scatter around the centered title block.
   mastheadOuter: {
+    position: 'relative',
     marginTop: -PAGE_TOP_PAD,
     marginHorizontal: -PAGE_H_PAD,
-    paddingTop: PAGE_TOP_PAD - 6,
-    paddingHorizontal: PAGE_H_PAD,
-    paddingBottom: 12,
+    height: MASTHEAD_HEIGHT,
     backgroundColor: PALETTE.pageBg,
     marginBottom: 14,
   },
-  // Icons row — evenly spread across the banner above the title
-  iconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    marginBottom: 8,
+  mastheadIcon: {
+    position: 'absolute',
   },
+  // Title block — centered over the scattered icons.
   mastheadCenter: {
+    position: 'absolute',
+    top: 58,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    paddingHorizontal: 8,
   },
   mastheadTitle: {
     fontSize: 18,
@@ -133,7 +154,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   mastheadDivider: {
-    marginTop: 10,
+    position: 'absolute',
+    bottom: 4,
+    left: PAGE_H_PAD,
+    right: PAGE_H_PAD,
     height: 1,
     backgroundColor: PALETTE.divider,
   },
@@ -269,17 +293,23 @@ export default function KidsNewspaperPDF({ articles, userName, date, imageBaseUr
         {/* ── Masthead ── */}
         <View style={styles.mastheadOuter}>
 
-          {/* Icons evenly spaced across the banner */}
-          <View style={styles.iconRow}>
-            <Image src={img(EMOJIS.newspaper)} style={{ width: 38, height: 38 }} />
-            <Image src={img(EMOJIS.palette)}   style={{ width: 36, height: 36 }} />
-            <Image src={img(EMOJIS.rocket)}    style={{ width: 38, height: 38 }} />
-            <Image src={img(EMOJIS.telescope)} style={{ width: 38, height: 38 }} />
-            <Image src={img(EMOJIS.moon)}      style={{ width: 36, height: 36 }} />
-            <Image src={img(EMOJIS.guitar)}    style={{ width: 32, height: 44 }} />
-          </View>
+          {/* Scattered icons — positions defined in ICON_SCATTER config */}
+          {ICON_SCATTER.map(spot => (
+            <Image
+              key={spot.key}
+              src={img(EMOJIS[spot.key])}
+              style={{
+                ...styles.mastheadIcon,
+                left: spot.left,
+                top: spot.top,
+                width: spot.size,
+                height: spot.size,
+                ...(spot.rotate ? { transform: `rotate(${spot.rotate}deg)` } : {}),
+              }}
+            />
+          ))}
 
-          {/* Title + date */}
+          {/* Title + date — centered over the scatter */}
           <View style={styles.mastheadCenter}>
             <Text style={styles.mastheadTitle}>{userName}&apos;s Daily Edition</Text>
             <Text style={styles.mastheadDate}>{date}</Text>
