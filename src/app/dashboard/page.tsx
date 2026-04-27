@@ -198,16 +198,9 @@ export default function DashboardPage() {
         if (deleteErr) throw new Error(deleteErr.message)
       }
 
-      // 3. Clear briefing_id so onboarding doesn't bounce back, but stash
-      //    the briefing_id as recyclable so onboarding can reuse it on the
-      //    backend (the plan only allows 1 active briefing — we can't create
-      //    a second one, but we CAN reuse the existing one for a new paper).
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
-      const metaUpdate: Record<string, string | null> = { briefing_id: null }
-      if (currentUser?.user_metadata?.briefing_id === paper.briefing_id) {
-        metaUpdate.recyclable_briefing_id = paper.briefing_id
-      }
-      await supabase.auth.updateUser({ data: metaUpdate })
+      // Note: we intentionally do NOT clear briefing_id from user metadata.
+      // The backend briefing persists — on a capped plan, onboarding will
+      // reuse it when the user creates a new paper.
 
       // 4. Update local state
       const remaining = papers.filter(p => p.id !== paper.id)

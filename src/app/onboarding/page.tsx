@@ -21,19 +21,11 @@ export default function OnboardingPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/sign-in'); return }
 
-      // Check papers table first
-      try {
-        const { data } = await supabase.from('papers').select('id').limit(1)
-        if (data && data.length > 0) { router.push('/dashboard'); return }
-      } catch {
-        // Table may not exist yet — fall through to metadata check
-      }
-
-      // Legacy check: user_metadata.briefing_id
-      if (user.user_metadata?.briefing_id) {
-        router.push('/dashboard')
-        return
-      }
+      // Only redirect if the papers table actually has rows.
+      // We no longer use briefing_id as a redirect guard — it's just the
+      // backend briefing reference and should never trigger a redirect on its own.
+      const { data } = await supabase.from('papers').select('id').limit(1)
+      if (data && data.length > 0) { router.push('/dashboard'); return }
 
       setChecking(false)
     }
@@ -67,14 +59,14 @@ export default function OnboardingPage() {
       const name = childName.trim()
 
       // 1. Resolve briefing ID.
-      //    Priority: recyclable_briefing_id (left by a deleted paper on a capped
-      //    plan) → create a new briefing → 403 is a hard failure.
-      const recyclableId = user?.user_metadata?.recyclable_briefing_id as string | undefined
+      //    If the user already has a briefing on the backend (briefing_id in
+      //    metadata), reuse it — the free plan only allows 1. Only create a
+      //    new briefing if this is a genuinely new account with none yet.
+      const existingBriefingId = user?.user_metadata?.briefing_id as string | undefined
       let briefing: { id: string }
 
-      if (recyclableId) {
-        // Reuse the backend briefing from the deleted paper — no new POST needed
-        briefing = { id: recyclableId }
+      if (existingBriefingId) {
+        briefing = { id: existingBriefingId }
       } else {
         briefing = await apiFetch('/api/briefings', {
           method: 'POST',
@@ -129,9 +121,9 @@ export default function OnboardingPage() {
           })
         }
 
-        // 4. Store briefing_id in user_metadata; clear recyclable_briefing_id now used
+        // 4. Store briefing_id in user_metadata (permanent — never cleared)
         await supabase.auth.updateUser({
-          data: { briefing_id: briefing.id, recyclable_briefing_id: null },
+          data: { briefing_id: briefing.id },
         })
       }
 
