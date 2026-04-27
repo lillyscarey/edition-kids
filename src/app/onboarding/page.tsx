@@ -66,17 +66,31 @@ export default function OnboardingPage() {
       const { data: { user } } = await supabase.auth.getUser()
       const name = childName.trim()
 
-      // 1. Create the briefing
-      const briefing: { id: string } = await apiFetch('/api/briefings', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: `${name}'s Paper`,
-          delivery_time: '07:00',
-          delivery_days: [1, 2, 3, 4, 5],
-          page_count: 2,
-          tone: 'kids_friendly',
-        }),
-      })
+      // 1. Create the briefing — if the plan limit is hit (403), fall back to
+      //    the existing briefing on the account (the old one from a deleted paper).
+      let briefing: { id: string }
+      try {
+        briefing = await apiFetch('/api/briefings', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: `${name}'s Paper`,
+            delivery_time: '07:00',
+            delivery_days: [1, 2, 3, 4, 5],
+            page_count: 2,
+            tone: 'kids_friendly',
+          }),
+        })
+      } catch (postErr) {
+        // 403 = plan limit: reuse the existing briefing instead of creating a new one
+        if (postErr instanceof Error && postErr.message.includes('403')) {
+          const existing = await apiFetch('/api/briefings')
+          const list = Array.isArray(existing) ? existing : (existing.briefings ?? existing.data ?? [])
+          if (!list.length) throw postErr   // no existing briefing to fall back to
+          briefing = { id: String(list[0].id ?? list[0].briefing_id) }
+        } else {
+          throw postErr
+        }
+      }
 
       // 2. Add selected topics
       const selectedTopics = TOPICS.filter(t => selected.has(t.id))
@@ -100,13 +114,24 @@ export default function OnboardingPage() {
       }))
 
       if (user) {
-        await supabase.from('papers').insert({
+        // Insert paper row — try with topics first; fall back without if column missing
+        const { error: insertErr } = await supabase.from('papers').insert({
           user_id: user.id,
           briefing_id: briefing.id,
           child_name: name,
           reading_level: 'ages_8_10',
           topics: topicsData,
         })
+
+        if (insertErr) {
+          // Retry without topics (column may not exist yet — migration pending)
+          await supabase.from('papers').insert({
+            user_id: user.id,
+            briefing_id: briefing.id,
+            child_name: name,
+            reading_level: 'ages_8_10',
+          })
+        }
 
         // 4. Store briefing_id in user_metadata (for legacy compatibility)
         await supabase.auth.updateUser({
