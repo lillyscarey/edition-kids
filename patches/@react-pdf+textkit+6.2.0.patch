@@ -1,0 +1,58 @@
+diff --git a/node_modules/@react-pdf/textkit/lib/textkit.js b/node_modules/@react-pdf/textkit/lib/textkit.js
+index fb45369..1815182 100644
+--- a/node_modules/@react-pdf/textkit/lib/textkit.js
++++ b/node_modules/@react-pdf/textkit/lib/textkit.js
+@@ -2996,7 +2996,8 @@ const getFontSize = (run) => run.attributes.fontSize || 12;
+ const pickFontFromFontStack = (codePoint, fontStack, lastFont) => {
+     if (IGNORED_CODE_POINTS.includes(codePoint))
+         return lastFont;
+-    const fontStackWithFallback = [...fontStack, lastFont];
++    const safeStack = (fontStack || []).filter(Boolean);
++    const fontStackWithFallback = [...safeStack, lastFont].filter(Boolean);
+     for (let i = 0; i < fontStackWithFallback.length; i += 1) {
+         const font = fontStackWithFallback[i];
+         if (font &&
+@@ -3005,7 +3006,8 @@ const pickFontFromFontStack = (codePoint, fontStack, lastFont) => {
+             return font;
+         }
+     }
+-    return fontStack.at(-1);
++    // Never return undefined — downstream reads .unitsPerEm.
++    return safeStack.at(-1) || lastFont || null;
+ };
+ const fontSubstitution = () => ({ string, runs }) => {
+     let lastFont = null;
+@@ -3033,14 +3035,14 @@ const fontSubstitution = () => ({ string, runs }) => {
+             // If anything that would impact res has changed, update it
+             if (font !== lastFont ||
+                 fontSize !== lastFontSize ||
+-                font.unitsPerEm !== lastFont?.unitsPerEm) {
++                font?.unitsPerEm !== lastFont?.unitsPerEm) {
+                 if (lastFont) {
+                     res.push({
+                         start: lastIndex,
+                         end: index,
+                         attributes: {
+                             font: [lastFont],
+-                            scale: lastFontSize / lastFont.unitsPerEm,
++                            scale: lastFont.unitsPerEm ? lastFontSize / lastFont.unitsPerEm : 1,
+                         },
+                     });
+                 }
+@@ -3051,14 +3053,14 @@ const fontSubstitution = () => ({ string, runs }) => {
+             index += char.length;
+         }
+     }
+-    if (lastIndex < string.length) {
++    if (lastIndex < string.length && lastFont) {
+         const fontSize = getFontSize(last(runs));
+         res.push({
+             start: lastIndex,
+             end: string.length,
+             attributes: {
+                 font: [lastFont],
+-                scale: fontSize / lastFont.unitsPerEm,
++                scale: lastFont.unitsPerEm ? fontSize / lastFont.unitsPerEm : 1,
+             },
+         });
+     }
