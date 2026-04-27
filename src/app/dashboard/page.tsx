@@ -687,7 +687,7 @@ export default function DashboardPage() {
                 </p>
                 <div className="flex items-center justify-center gap-3">
                   <Link
-                    href="/onboarding"
+                    href={selectedPaper ? `/edit-paper/${selectedPaper.id}` : '/dashboard'}
                     className="px-5 py-2.5 bg-[#4f6b4f] text-white font-bold rounded-full hover:bg-[#3d5a3d] transition-colors text-[11px] uppercase tracking-[1px]"
                   >
                     Set topics
@@ -723,7 +723,7 @@ export default function DashboardPage() {
                   Show all anyway
                 </button>
                 <Link
-                  href="/onboarding"
+                  href={selectedPaper ? `/edit-paper/${selectedPaper.id}` : '/dashboard'}
                   className="text-[11px] font-semibold uppercase tracking-[1px] text-[#4a4a48] hover:text-[#1c1c1a] transition-colors"
                 >
                   Update topics →
