@@ -2,17 +2,21 @@
 
 import { Article } from '@/lib/types'
 import { getCategoryStyle } from '@/lib/categories'
+import { truncateToSentences } from '@/lib/text'
 
 type Props = { article: Article }
 
 export default function ArticleCard({ article }: Props) {
   const style = getCategoryStyle(article.category)
 
-  // Split body on the Did You Know? marker
+  // Split body on the Did You Know? marker, then cap the main body at
+  // 4 sentences so summaries stay short. (Reading-level / vocabulary tuning
+  // lives in the backend AI prompt — this is just length control.)
   const DYK_MARKER = '💡 Did You Know?'
-  const [mainBody, didYouKnow] = article.body.includes(DYK_MARKER)
+  const [rawMain, didYouKnow] = article.body.includes(DYK_MARKER)
     ? article.body.split(DYK_MARKER).map(s => s.trim())
     : [article.body.trim(), null]
+  const mainBody = truncateToSentences(rawMain, 4)
 
   const publishedDate = new Date(article.published_at).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric',

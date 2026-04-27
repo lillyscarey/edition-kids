@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from '@react-pdf/renderer'
 import { Article } from '@/lib/types'
+import { truncateToSentences } from '@/lib/text'
 
 // ── Font registration ────────────────────────────────────────────────────────
 // Use local font files served from /public/fonts/ — more reliable in production
@@ -72,13 +73,6 @@ function getCategoryTextColor(category: string) {
 }
 function getCategoryLabel(category: string) {
   return CATEGORY_LABELS[category?.toUpperCase()] ?? category
-}
-
-// ── Truncate body text to N sentences ────────────────────────────────────────
-function truncateToSentences(text: string, max = 4): string {
-  // Split on sentence-ending punctuation followed by whitespace or end of string
-  const sentences = text.match(/[^.!?]*[.!?]+(\s|$)/g) ?? [text]
-  return sentences.slice(0, max).join('').trim()
 }
 
 // ── Styles ───────────────────────────────────────────────────────────────────

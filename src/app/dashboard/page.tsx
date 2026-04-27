@@ -101,6 +101,11 @@ export default function DashboardPage() {
   }
 
   // ── Load a specific edition's articles ────────────────────────────────────
+  // NOTE: article count and reading-level rewriting are controlled by the
+  // backend repo (the API at NEXT_PUBLIC_API_URL). The `tone: "kids_friendly"`
+  // briefing flag activates kid-friendly rewriting server-side, but vocabulary
+  // / sentence-complexity tuning lives in the backend's AI prompt — not here.
+  // This frontend only filters and caps what the API returns.
   async function loadEdition(editionId: string) {
     setPaperState('loading')
     try {
@@ -108,9 +113,11 @@ export default function DashboardPage() {
       const sorted: Article[] = (data.articles ?? []).sort(
         (a: Article, b: Article) => a.position - b.position
       )
+      // Strict 24-hour freshness filter — no fallback. If nothing fresh, the
+      // empty-state UI prompts the user to regenerate.
       const cutoff = Date.now() - 24 * 60 * 60 * 1000
       const recent = sorted.filter(a => new Date(a.published_at).getTime() > cutoff)
-      setArticles(recent.length >= 2 ? recent : sorted)
+      setArticles(recent)
       setSelectedEditionId(editionId)
       setPaperState('ready')
     } catch {
@@ -342,16 +349,25 @@ export default function DashboardPage() {
 
   const atPaperLimit = papers.length >= 10
 
-  // Filter articles to the selected paper's topic preferences.
-  // Falls back to all articles if topics are empty (legacy/unset) or
-  // if filtering yields fewer than 2 results (avoids near-empty papers).
+  // Filter articles to the selected paper's topic preferences and cap at 4.
+  // Strict — no silent fallback to "all articles" when filter is empty or
+  // matches few results. If 0 match, the empty-state UI surfaces it so the
+  // user can regenerate (and we can spot bad topic data instead of hiding it).
   // Must be declared before any early returns to satisfy Rules of Hooks.
+  const ARTICLE_CAP = 4
   const displayArticles = useMemo(() => {
     const paperTopics: PaperTopic[] = selectedPaper?.topics ?? []
-    if (paperTopics.length === 0 || articles.length === 0) return articles
+    if (articles.length === 0) return articles
 
-    // Match on subcategory first (specific), then fall back to category (broad)
-    const subcats = new Set(paperTopics.filter(t => t.subcategory).map(t => t.subcategory!.toLowerCase()))
+    // Legacy papers may have empty `topics` — fall back to category set
+    // derived from any topic data we have. If still empty, return [] so the
+    // user notices and can re-onboard rather than seeing off-topic content.
+    if (paperTopics.length === 0) return []
+
+    // Match on subcategory first (specific), then category (broad).
+    const subcats = new Set(
+      paperTopics.filter(t => t.subcategory).map(t => t.subcategory!.toLowerCase())
+    )
     const cats = new Set(paperTopics.map(t => t.category.toUpperCase()))
 
     const filtered = articles.filter(a => {
@@ -359,7 +375,7 @@ export default function DashboardPage() {
       return cats.has((a.category ?? '').toUpperCase())
     })
 
-    return filtered.length >= 2 ? filtered : articles
+    return filtered.slice(0, ARTICLE_CAP)
   }, [articles, selectedPaper?.topics])
 
   // ── Generating screen ──────────────────────────────────────────────────────
