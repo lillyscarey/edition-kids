@@ -17,6 +17,7 @@ export default function OnboardingPage() {
   const [checking, setChecking] = useState(true)
   const [error, setError] = useState('')
   const [planLimitHit, setPlanLimitHit] = useState(false)
+  const [diagnostic, setDiagnostic] = useState('')
 
   // If user already has papers, send them to dashboard
   useEffect(() => {
@@ -87,26 +88,41 @@ export default function OnboardingPage() {
           })
         } catch (err) {
           const msg = err instanceof Error ? err.message : ''
+          console.error('[onboarding] POST /api/briefings failed:', msg)
+
           if (/403/.test(msg)) {
             // Plan-limit hit. The backend already has a briefing for this
             // account but it's missing from user_metadata. Discover it via
             // GET /api/briefings and reuse it instead of failing.
+            let listRaw: unknown
             try {
-              const list = await apiFetch('/api/briefings')
-              const items: Array<{ id?: string; briefing_id?: string }> =
-                Array.isArray(list) ? list : (list?.briefings ?? list?.items ?? [])
-              const recoveredId = items
-                .map(b => b?.id ?? b?.briefing_id)
-                .find((id): id is string => typeof id === 'string' && id.length > 0)
+              listRaw = await apiFetch('/api/briefings')
+            } catch (getErr) {
+              const getMsg = getErr instanceof Error ? getErr.message : String(getErr)
+              console.error('[onboarding] GET /api/briefings failed:', getMsg)
+              setDiagnostic(`POST 403, then GET failed: ${getMsg}`)
+              setPlanLimitHit(true)
+              setLoading(false)
+              return
+            }
 
-              if (recoveredId) {
-                briefing = { id: recoveredId }
-              } else {
-                setPlanLimitHit(true)
-                setLoading(false)
-                return
-              }
-            } catch {
+            console.log('[onboarding] GET /api/briefings response:', listRaw)
+            const list = listRaw as Record<string, unknown> | unknown[]
+            const items: Array<{ id?: string; briefing_id?: string }> =
+              Array.isArray(list)
+                ? (list as Array<{ id?: string; briefing_id?: string }>)
+                : ((list as { briefings?: unknown; items?: unknown })?.briefings as Array<{ id?: string; briefing_id?: string }>
+                    ?? (list as { items?: unknown })?.items as Array<{ id?: string; briefing_id?: string }>
+                    ?? [])
+            const recoveredId = (items ?? [])
+              .map(b => b?.id ?? b?.briefing_id)
+              .find((id): id is string => typeof id === 'string' && id.length > 0)
+
+            if (recoveredId) {
+              console.log('[onboarding] recovered briefing id:', recoveredId)
+              briefing = { id: recoveredId }
+            } else {
+              setDiagnostic(`POST 403; GET returned no usable briefing id. Raw: ${JSON.stringify(listRaw).slice(0, 400)}`)
               setPlanLimitHit(true)
               setLoading(false)
               return
@@ -195,6 +211,11 @@ export default function OnboardingPage() {
             current plan. Your existing papers and archive of past editions still
             work as expected.
           </p>
+          {diagnostic && (
+            <pre className="text-xs text-left bg-[#f5f1e8] border border-[#ded4c4] rounded-lg p-3 mb-6 whitespace-pre-wrap break-all text-[#4a4a48]">
+              {diagnostic}
+            </pre>
+          )}
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/dashboard"
