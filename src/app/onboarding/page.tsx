@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api'
+import { TONE_KIDS_FRIENDLY } from '@/lib/constants'
 import { TOPICS, TOPIC_GROUPS } from '@/lib/topics'
 import Nav from '@/components/Nav'
 
@@ -83,7 +84,7 @@ export default function OnboardingPage() {
               delivery_time: '07:00',
               delivery_days: [1, 2, 3, 4, 5],
               page_count: 2,
-              tone: 'kids_friendly',
+              tone: TONE_KIDS_FRIENDLY,
             }),
           })
         } catch (err) {

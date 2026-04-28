@@ -23,7 +23,7 @@ export default function LoadingNewspaper() {
           Building your paper…
         </h2>
         <p className="text-[#4a4a48] text-sm">
-          This takes about 30–60 seconds. Hang tight!
+          This takes up to 2 minutes the first time. Hang tight!
         </p>
       </div>
 

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api'
+import { TONE_KIDS_FRIENDLY, GENERATE_TIMEOUT_MS, KIDS_TONE_DEPLOYED_AT } from '@/lib/constants'
 import ArticleCard from '@/components/ArticleCard'
 import LoadingNewspaper from '@/components/LoadingNewspaper'
 import PDFDownloadButton from '@/components/PDFDownloadButton'
@@ -19,6 +20,29 @@ const PAPER_COLORS = [
   { bg: 'bg-purple-100', text: 'text-purple-700' },
   { bg: 'bg-pink-100',   text: 'text-pink-700'   },
 ]
+
+// Map /api/generate errors to user-readable copy. Backend status codes are
+// preserved on the Error via apiFetch's ApiError type.
+function generationErrorMessage(err: unknown): string {
+  const status = (err as { status?: number })?.status
+  const message = err instanceof Error ? err.message : ''
+
+  if (status === 429) {
+    return /Generation already in progress/i.test(message)
+      ? 'Already generating this paper — give it a moment and try again.'
+      : "You've hit today's generation limit. Try again tomorrow."
+  }
+  if (status === 400) {
+    return 'Not enough kid-safe articles available right now. Try again later today.'
+  }
+  if (status === 403) {
+    return "This account isn't allowed to generate kids editions. Please contact support."
+  }
+  if (message.includes('timed out') || message.includes('aborted') || message.includes('AbortError')) {
+    return 'Generation took too long. Please try again — the next run is usually faster.'
+  }
+  return 'Generation failed. Please try again.'
+}
 
 function TrashIcon() {
   return (
@@ -154,8 +178,17 @@ export default function DashboardPage() {
       )
       setEditions(pastEditions)
 
-      if (pastEditions.length > 0) {
-        await loadEdition(String(pastEditions[0].edition_id))
+      // Editions generated before the kids-tone fix went out ran through the
+      // adult pipeline and may contain leaked content. Don't auto-load them
+      // — the user should regenerate. Older editions stay in the dropdown
+      // (badged) so archive history isn't lost.
+      const cutoffMs = new Date(KIDS_TONE_DEPLOYED_AT).getTime()
+      const postFix = pastEditions.filter(
+        e => new Date(e.generated_at).getTime() >= cutoffMs
+      )
+
+      if (postFix.length > 0) {
+        await loadEdition(String(postFix[0].edition_id))
       } else {
         setPaperState('empty')
       }
@@ -174,13 +207,21 @@ export default function DashboardPage() {
   }
 
   // ── Generate a new edition ────────────────────────────────────────────────
+  // CRITICAL: tone: "kids_friendly" must be on every /api/generate body.
+  // Without it, the backend silently runs the adult pipeline (no whitelist,
+  // no keyword filter, no sensitivity strip). See Edition_Kids_API_Guide.md.
   async function handleGenerate() {
     if (!selectedPaper) return
     setPaperState('generating')
     try {
       const result = await apiFetch('/api/generate', {
         method: 'POST',
-        body: JSON.stringify({ briefing_id: selectedPaper.briefing_id, skip_pdf: true }),
+        timeoutMs: GENERATE_TIMEOUT_MS,
+        body: JSON.stringify({
+          briefing_id: selectedPaper.briefing_id,
+          tone: TONE_KIDS_FRIENDLY,
+          skip_pdf: true,
+        }),
       })
       const newEditionId = String(result.edition_id)
       const updated: Edition[] = await apiFetch(
@@ -190,7 +231,7 @@ export default function DashboardPage() {
       await loadEdition(newEditionId)
     } catch (err) {
       setPaperState('error')
-      setErrorMsg(err instanceof Error ? err.message : 'Generation failed. Please try again.')
+      setErrorMsg(generationErrorMessage(err))
     }
   }
 
@@ -580,11 +621,15 @@ export default function DashboardPage() {
               onChange={e => loadEdition(e.target.value)}
               className="border border-[#ded4c4] rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#4f6b4f] text-[#1c1c1a]"
             >
-              {editions.map(ed => (
-                <option key={ed.edition_id} value={String(ed.edition_id)}>
-                  {formattedDate(ed.generated_at)}
-                </option>
-              ))}
+              {editions.map(ed => {
+                const isPreFix = new Date(ed.generated_at).getTime()
+                  < new Date(KIDS_TONE_DEPLOYED_AT).getTime()
+                return (
+                  <option key={ed.edition_id} value={String(ed.edition_id)}>
+                    {formattedDate(ed.generated_at)}{isPreFix ? ' (pre-filter)' : ''}
+                  </option>
+                )
+              })}
             </select>
           ) : (
             <p className="text-[#4a4a48] text-sm">No editions yet</p>
