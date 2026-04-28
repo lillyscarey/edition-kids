@@ -150,6 +150,7 @@ export default function DashboardPage() {
         editionId,
         rawCount: sorted.length,
         afterFreshness: recent.length,
+        sources: Array.from(new Set(sorted.map(a => a.source_name))),
         categories: Array.from(new Set(sorted.map(a => a.category))),
         subcategories: Array.from(new Set(sorted.map(a => a.subcategory).filter(Boolean))),
         oldestPublished: sorted[0]?.published_at,
@@ -214,15 +215,18 @@ export default function DashboardPage() {
     if (!selectedPaper) return
     setPaperState('generating')
     try {
+      const generateBody = {
+        briefing_id: selectedPaper.briefing_id,
+        tone: TONE_KIDS_FRIENDLY,
+        skip_pdf: true,
+      }
+      console.log('[generate] POST /api/generate body:', generateBody)
       const result = await apiFetch('/api/generate', {
         method: 'POST',
         timeoutMs: GENERATE_TIMEOUT_MS,
-        body: JSON.stringify({
-          briefing_id: selectedPaper.briefing_id,
-          tone: TONE_KIDS_FRIENDLY,
-          skip_pdf: true,
-        }),
+        body: JSON.stringify(generateBody),
       })
+      console.log('[generate] response:', result)
       const newEditionId = String(result.edition_id)
       const updated: Edition[] = await apiFetch(
         `/api/editions?briefing_id=${selectedPaper.briefing_id}`
