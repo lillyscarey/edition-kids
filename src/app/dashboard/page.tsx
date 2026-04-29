@@ -99,8 +99,9 @@ export default function DashboardPage() {
   const [toast, setToast] = useState<string | null>(null)
   const [bypassFilter, setBypassFilter] = useState(false)
 
-  // Debug info for backend diagnostics — shows last generate response
+  // Debug info for backend diagnostics — shows last generate response + render state
   const [lastGenerateDebug, setLastGenerateDebug] = useState<Record<string, unknown> | null>(null)
+  const [lastLoadDebug, setLastLoadDebug] = useState<Record<string, unknown> | null>(null)
   const [showDebug, setShowDebug] = useState(false)
 
   // ── Escape key closes modals ─────────────────────────────────────────────
@@ -148,18 +149,18 @@ export default function DashboardPage() {
       // articles. Was 24h but proved too tight in practice.
       const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
       const recent = sorted.filter(a => new Date(a.published_at).getTime() > cutoff)
-      // Diagnostic: surface raw vs filtered counts so empty-state cases are
-      // debuggable from DevTools without needing to instrument further.
-      console.log('[loadEdition]', {
-        editionId,
-        rawCount: sorted.length,
-        afterFreshness: recent.length,
+      const loadDebug = {
+        rendering_edition_id: editionId,
+        raw_from_api: sorted.length,
+        after_7day_filter: recent.length,
+        dropped_by_freshness: sorted.length - recent.length,
         sources: Array.from(new Set(sorted.map(a => a.source_name))),
-        categories: Array.from(new Set(sorted.map(a => a.category))),
-        subcategories: Array.from(new Set(sorted.map(a => a.subcategory).filter(Boolean))),
-        oldestPublished: sorted[0]?.published_at,
-        newestPublished: sorted[sorted.length - 1]?.published_at,
-      })
+        oldest_published: sorted[0]?.published_at,
+        newest_published: sorted[sorted.length - 1]?.published_at,
+        loaded_at: new Date().toISOString(),
+      }
+      console.log('[loadEdition]', loadDebug)
+      setLastLoadDebug(loadDebug)
       setArticles(recent)
       setSelectedEditionId(editionId)
       setPaperState('ready')
@@ -677,7 +678,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Backend diagnostics panel — shows after each generate */}
-        {lastGenerateDebug && (
+        {(lastGenerateDebug || lastLoadDebug) && (
           <div className="mb-4">
             <button
               onClick={() => setShowDebug(v => !v)}
@@ -686,17 +687,27 @@ export default function DashboardPage() {
               <span>{showDebug ? '▾' : '▸'}</span> Last generate diagnostics
             </button>
             {showDebug && (
-              <div className="mt-2 bg-[#f4f1ea] border border-[#ded4c4] rounded-xl p-4 font-mono text-[11px] text-[#4a4a48] leading-relaxed">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-bold text-[#1c1c1a]">Copy this for backend support:</span>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(JSON.stringify(lastGenerateDebug, null, 2))}
-                    className="text-[10px] font-semibold uppercase tracking-[1px] bg-white border border-[#ded4c4] px-2 py-1 rounded-lg hover:bg-[#ded4c4] transition-colors"
-                  >
-                    Copy JSON
-                  </button>
-                </div>
-                <pre className="whitespace-pre-wrap break-all">{JSON.stringify(lastGenerateDebug, null, 2)}</pre>
+              <div className="mt-2 bg-[#f4f1ea] border border-[#ded4c4] rounded-xl p-4 font-mono text-[11px] text-[#4a4a48] leading-relaxed space-y-4">
+                {lastGenerateDebug && (
+                  <div>
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-bold text-[#1c1c1a]">① Generate response</span>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(JSON.stringify({ generate: lastGenerateDebug, load: lastLoadDebug }, null, 2))}
+                        className="text-[10px] font-semibold uppercase tracking-[1px] bg-white border border-[#ded4c4] px-2 py-1 rounded-lg hover:bg-[#ded4c4] transition-colors"
+                      >
+                        Copy all JSON
+                      </button>
+                    </div>
+                    <pre className="whitespace-pre-wrap break-all">{JSON.stringify(lastGenerateDebug, null, 2)}</pre>
+                  </div>
+                )}
+                {lastLoadDebug && (
+                  <div>
+                    <div className="font-bold text-[#1c1c1a] mb-1">② What actually rendered</div>
+                    <pre className="whitespace-pre-wrap break-all">{JSON.stringify(lastLoadDebug, null, 2)}</pre>
+                  </div>
+                )}
               </div>
             )}
           </div>
