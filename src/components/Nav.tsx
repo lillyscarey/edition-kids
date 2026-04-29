@@ -20,23 +20,23 @@ export default function Nav({ userName }: Props) {
   return (
     <header className="bg-white border-b border-[#ded4c4] font-albert">
       {/* Masthead */}
-      <div className="px-4 pt-5 pb-3 flex flex-col items-center gap-1">
+      <div className="px-4 pt-3 pb-2 flex flex-col items-center gap-0.5">
         <Link href="/dashboard">
           <img
             src="/images/logo.png"
             alt="Edition Kids"
-            className="w-72 max-w-[85vw] h-auto"
+            className="w-44 max-w-[70vw] h-auto"
           />
         </Link>
         {userName && (
-          <p className="text-[11px] text-[#4a4a48] tracking-[1px] uppercase font-semibold">
+          <p className="text-[10px] text-[#4a4a48] tracking-[1px] uppercase font-semibold">
             {userName}&apos;s Daily Paper
           </p>
         )}
       </div>
 
       {/* Nav strip */}
-      <nav className="flex items-center justify-center gap-6 px-4 py-2 border-t border-[#ded4c4]">
+      <nav className="flex items-center justify-center gap-6 px-4 py-1.5 border-t border-[#ded4c4]">
         <Link
           href="/dashboard"
           className="text-xs font-semibold uppercase tracking-[1px] text-[#4a4a48] hover:text-[#1c1c1a] transition-colors"
