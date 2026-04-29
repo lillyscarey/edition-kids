@@ -184,9 +184,9 @@ export default function DashboardPage() {
       // — the user should regenerate. Older editions stay in the dropdown
       // (badged) so archive history isn't lost.
       const cutoffMs = new Date(KIDS_TONE_DEPLOYED_AT).getTime()
-      const postFix = pastEditions.filter(
-        e => new Date(e.generated_at).getTime() >= cutoffMs
-      )
+      const postFix = pastEditions
+        .filter(e => new Date(e.generated_at).getTime() >= cutoffMs)
+        .sort((a, b) => new Date(b.generated_at).getTime() - new Date(a.generated_at).getTime())
 
       if (postFix.length > 0) {
         await loadEdition(String(postFix[0].edition_id))
