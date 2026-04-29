@@ -222,12 +222,12 @@ export default function DashboardPage() {
   async function handleGenerate() {
     if (!selectedPaper) return
     setPaperState('generating')
+    const generateBody = {
+      briefing_id: selectedPaper.briefing_id,
+      tone: TONE_KIDS_FRIENDLY,
+      skip_pdf: true,
+    }
     try {
-      const generateBody = {
-        briefing_id: selectedPaper.briefing_id,
-        tone: TONE_KIDS_FRIENDLY,
-        skip_pdf: true,
-      }
       console.log('[generate] POST /api/generate body:', generateBody)
       const result = await apiFetch('/api/generate', {
         method: 'POST',
