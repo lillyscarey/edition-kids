@@ -18,7 +18,8 @@ export default function ArticleCard({ article }: Props) {
     : [article.body.trim(), null]
   const mainBody = truncateToSentences(rawMain, 4)
 
-  const publishedDate = new Date(article.published_at).toLocaleDateString('en-US', {
+  const _pd = article.published_at ? new Date(article.published_at) : null
+  const publishedDate = (_pd && !isNaN(_pd.getTime()) ? _pd : new Date()).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric',
   })
 

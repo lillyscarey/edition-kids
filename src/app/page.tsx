@@ -1,18 +1,21 @@
 import Link from 'next/link'
 
 const TOPICS = [
-  { emoji: '🚀', label: 'Space & Rockets',   pill: 'bg-blue-50 border-blue-200 text-blue-800'     },
-  { emoji: '💡', label: 'Inventions & Tech', pill: 'bg-blue-50 border-blue-200 text-blue-800'     },
-  { emoji: '🤖', label: 'Gadgets & Robots',  pill: 'bg-blue-50 border-blue-200 text-blue-800'     },
-  { emoji: '🦁', label: 'Animals & Nature',  pill: 'bg-green-50 border-green-200 text-green-800'  },
-  { emoji: '🌍', label: 'Planet Earth',      pill: 'bg-green-50 border-green-200 text-green-800'  },
-  { emoji: '🔬', label: 'Cool Science',      pill: 'bg-green-50 border-green-200 text-green-800'  },
-  { emoji: '⚽', label: 'Soccer',            pill: 'bg-orange-50 border-orange-200 text-orange-800'},
-  { emoji: '🎬', label: 'Movies & Shows',    pill: 'bg-purple-50 border-purple-200 text-purple-800'},
-  { emoji: '🎵', label: 'Music',             pill: 'bg-purple-50 border-purple-200 text-purple-800'},
-  { emoji: '📚', label: 'Books & Stories',   pill: 'bg-purple-50 border-purple-200 text-purple-800'},
-  { emoji: '🍕', label: 'Food & Cooking',    pill: 'bg-yellow-50 border-yellow-200 text-yellow-800'},
-  { emoji: '💪', label: 'Health & Fitness',  pill: 'bg-pink-50 border-pink-200 text-pink-800'     },
+  { emoji: '🚀', label: 'Space & Rockets', pill: 'bg-blue-50 border-blue-200 text-blue-800'      },
+  { emoji: '🤖', label: 'Gadgets',         pill: 'bg-blue-50 border-blue-200 text-blue-800'      },
+  { emoji: '🦁', label: 'Animals',         pill: 'bg-green-50 border-green-200 text-green-800'   },
+  { emoji: '🌎', label: 'Earth & Oceans',  pill: 'bg-green-50 border-green-200 text-green-800'   },
+  { emoji: '🔬', label: 'Cool Science',    pill: 'bg-green-50 border-green-200 text-green-800'   },
+  { emoji: '🏈', label: 'Football',        pill: 'bg-orange-50 border-orange-200 text-orange-800'},
+  { emoji: '🏀', label: 'Basketball',      pill: 'bg-orange-50 border-orange-200 text-orange-800'},
+  { emoji: '⚾', label: 'Baseball',        pill: 'bg-orange-50 border-orange-200 text-orange-800'},
+  { emoji: '⚽', label: 'Soccer',          pill: 'bg-orange-50 border-orange-200 text-orange-800'},
+  { emoji: '🎬', label: 'Movies & TV',     pill: 'bg-purple-50 border-purple-200 text-purple-800'},
+  { emoji: '🎵', label: 'Music',           pill: 'bg-purple-50 border-purple-200 text-purple-800'},
+  { emoji: '🍕', label: 'Food',            pill: 'bg-purple-50 border-purple-200 text-purple-800'},
+  { emoji: '📚', label: 'Books',           pill: 'bg-purple-50 border-purple-200 text-purple-800'},
+  { emoji: '🎨', label: 'Art & Design',    pill: 'bg-purple-50 border-purple-200 text-purple-800'},
+  { emoji: '🌍', label: 'Climate',         pill: 'bg-yellow-50 border-yellow-200 text-yellow-800'},
 ]
 
 const STEPS = [

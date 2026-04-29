@@ -92,13 +92,21 @@ export default function ArchivePage() {
     }
   }
 
-  const formattedDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('en-US', {
+  const formattedDate = (iso: string) => {
+    const d = iso ? new Date(iso) : null
+    const valid = d && !isNaN(d.getTime())
+    return (valid ? d : new Date()).toLocaleDateString('en-US', {
       weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
     })
+  }
 
-  const shortDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const shortDate = (iso: string) => {
+    const d = iso ? new Date(iso) : null
+    const valid = d && !isNaN(d.getTime())
+    return (valid ? d : new Date()).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric', year: 'numeric',
+    })
+  }
 
   return (
     <div className="min-h-screen bg-page font-albert">

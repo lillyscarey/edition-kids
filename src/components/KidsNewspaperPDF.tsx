@@ -331,7 +331,8 @@ export default function KidsNewspaperPDF({ articles, userName, date, imageBaseUr
         {/* ── Articles ── */}
         {displayArticles.map((article) => {
           const theme = themeFor(article.category)
-          const publishedDate = new Date(article.published_at).toLocaleDateString('en-US', {
+          const _pd = article.published_at ? new Date(article.published_at) : null
+          const publishedDate = (_pd && !isNaN(_pd.getTime()) ? _pd : new Date()).toLocaleDateString('en-US', {
             month: 'short', day: 'numeric',
           })
 

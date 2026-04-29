@@ -1,3 +1,22 @@
+// ── Topic catalog ────────────────────────────────────────────────────────────
+//
+// Source of truth for kid-pickable topics. Each entry's (category, subcategory)
+// MUST exist in the backend taxonomy. The kids pipeline is gated by the
+// backend's kids whitelist; topics here exist mainly to filter what's
+// surfaced per-paper on the dashboard.
+//
+// Keep aligned with:
+//   • Backend taxonomy:  GET https://edition-production.up.railway.app/api/taxonomy
+//   • Kids whitelist & subcategory exclusions:  Edition_Kids_API_Guide.md
+//
+// To detect drift (e.g. backend renaming or removing a subcategory we use):
+//   npm run validate-topics
+//
+// Excluded subcategories per the API guide's Layer 3 — DO NOT add these here:
+//   us_justice, us_immigration, us_legal, world_conflict, world_rights,
+//   world_migration, biz_crypto, biz_finance, biz_trade, health_disease,
+//   health_pharma, health_policy, tech_security, tech_semiconductors, tech_social
+
 export type Topic = {
   id: string
   label: string
@@ -24,19 +43,8 @@ export const TOPICS: Topic[] = [
     groupLabel: 'Technology',
   },
   {
-    id: 'inventions',
-    label: 'Inventions & Tech',
-    emoji: '💡',
-    category: 'TECHNOLOGY',
-    subcategory: 'tech_ai',
-    colorClass: 'bg-blue-100',
-    borderClass: 'border-blue-400',
-    textClass: 'text-blue-600',
-    groupLabel: 'Technology',
-  },
-  {
     id: 'gadgets',
-    label: 'Gadgets & Robots',
+    label: 'Gadgets',
     emoji: '🤖',
     category: 'TECHNOLOGY',
     subcategory: 'tech_hardware',
@@ -49,8 +57,8 @@ export const TOPICS: Topic[] = [
   // Science
   {
     id: 'animals',
-    label: 'Animals & Nature',
-    emoji: '🐾',
+    label: 'Animals',
+    emoji: '🦁',
     category: 'SCIENCE',
     subcategory: 'sci_biology',
     colorClass: 'bg-green-100',
@@ -59,9 +67,9 @@ export const TOPICS: Topic[] = [
     groupLabel: 'Science',
   },
   {
-    id: 'earth',
-    label: 'Planet Earth',
-    emoji: '🌍',
+    id: 'earth_oceans',
+    label: 'Earth & Oceans',
+    emoji: '🌎',
     category: 'SCIENCE',
     subcategory: 'sci_earth',
     colorClass: 'bg-green-100',
@@ -75,17 +83,6 @@ export const TOPICS: Topic[] = [
     emoji: '🔬',
     category: 'SCIENCE',
     subcategory: 'sci_research',
-    colorClass: 'bg-green-100',
-    borderClass: 'border-green-400',
-    textClass: 'text-green-600',
-    groupLabel: 'Science',
-  },
-  {
-    id: 'energy',
-    label: 'Energy & Environment',
-    emoji: '🌱',
-    category: 'SCIENCE',
-    subcategory: 'sci_energy',
     colorClass: 'bg-green-100',
     borderClass: 'border-green-400',
     textClass: 'text-green-600',
@@ -150,8 +147,8 @@ export const TOPICS: Topic[] = [
 
   // Culture
   {
-    id: 'movies',
-    label: 'Movies & Shows',
+    id: 'movies_tv',
+    label: 'Movies & TV',
     emoji: '🎬',
     category: 'CULTURE',
     subcategory: 'culture_film_tv',
@@ -173,7 +170,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: 'food',
-    label: 'Food & Cooking',
+    label: 'Food',
     emoji: '🍕',
     category: 'CULTURE',
     subcategory: 'culture_food',
@@ -184,7 +181,7 @@ export const TOPICS: Topic[] = [
   },
   {
     id: 'books',
-    label: 'Books & Stories',
+    label: 'Books',
     emoji: '📚',
     category: 'CULTURE',
     subcategory: 'culture_books',
@@ -207,8 +204,8 @@ export const TOPICS: Topic[] = [
 
   // World
   {
-    id: 'world',
-    label: 'World Explorer',
+    id: 'climate',
+    label: 'Climate',
     emoji: '🌍',
     category: 'WORLD',
     subcategory: 'world_climate',
@@ -216,19 +213,6 @@ export const TOPICS: Topic[] = [
     borderClass: 'border-yellow-400',
     textClass: 'text-yellow-600',
     groupLabel: 'World',
-  },
-
-  // Health
-  {
-    id: 'health',
-    label: 'Health & Fitness',
-    emoji: '💪',
-    category: 'HEALTH',
-    subcategory: 'health_wellness',
-    colorClass: 'bg-pink-100',
-    borderClass: 'border-pink-400',
-    textClass: 'text-pink-600',
-    groupLabel: 'Health',
   },
 ]
 
@@ -238,5 +222,4 @@ export const TOPIC_GROUPS = [
   'Sports',
   'Culture',
   'World',
-  'Health',
 ] as const
