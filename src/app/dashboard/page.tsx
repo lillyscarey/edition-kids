@@ -28,9 +28,13 @@ function generationErrorMessage(err: unknown): string {
   const message = err instanceof Error ? err.message : ''
 
   if (status === 429) {
-    return /Generation already in progress/i.test(message)
-      ? 'Already generating this paper — give it a moment and try again.'
-      : "You've hit today's generation limit. Try again tomorrow."
+    if (/Generation already in progress/i.test(message)) {
+      return 'Already generating — give it a moment and try again.'
+    }
+    if (/rate limit exceeded/i.test(message)) {
+      return 'Too many requests — wait 60 seconds and try again.'
+    }
+    return "You've hit today's generation limit. Try again tomorrow."
   }
   if (status === 400) {
     return 'Not enough kid-safe articles available right now. Try again later today.'
