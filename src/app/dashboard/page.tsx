@@ -41,6 +41,9 @@ function generationErrorMessage(err: unknown): string {
   if (message.includes('timed out') || message.includes('aborted') || message.includes('AbortError')) {
     return 'Generation took too long. Please try again — the next run is usually faster.'
   }
+  if (status) {
+    return `Generation failed (error ${status}). Please try again or contact support.`
+  }
   return 'Generation failed. Please try again.'
 }
 
@@ -249,6 +252,17 @@ export default function DashboardPage() {
       setEditions(updated)
       await loadEdition(newEditionId)
     } catch (err) {
+      const status = (err as { status?: number })?.status
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[generate] error:', { status, message })
+      setLastGenerateDebug({
+        request_body: generateBody,
+        error: true,
+        status: status ?? 'network',
+        message,
+        failed_at: new Date().toISOString(),
+      })
+      setShowDebug(true)
       setPaperState('error')
       setErrorMsg(generationErrorMessage(err))
     }
