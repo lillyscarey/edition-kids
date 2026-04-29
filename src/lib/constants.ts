@@ -9,7 +9,9 @@ export const TONE_KIDS_FRIENDLY = 'kids_friendly' as const
  *  LLM rewrite per article. Subsequent runs are mostly cache hits. */
 export const GENERATE_TIMEOUT_MS = 180_000
 
-/** Deploy moment for the kids-tone fix. Editions generated before this
- *  timestamp ran through the adult pipeline and may contain leaked content;
- *  the dashboard hides them from auto-load and badges them in the dropdown. */
-export const KIDS_TONE_DEPLOYED_AT = '2026-04-28T00:00:00Z'
+/** Deploy moment for the Grade 3 kids-tone prompt + source cache clear.
+ *  Backend confirmed: Grade 3 prompt live at 23:58 UTC Apr 28, cache cleared
+ *  at 00:00 UTC Apr 29. Editions before this ran the old adult/pre-Grade3
+ *  pipeline; the dashboard hides them from auto-load and badges them in the
+ *  dropdown. */
+export const KIDS_TONE_DEPLOYED_AT = '2026-04-29T00:00:00Z'
