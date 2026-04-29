@@ -14,7 +14,7 @@ export default function LoadingNewspaper() {
 
       {/* Bouncing logo */}
       <div className="animate-bounce">
-        <img src="/images/logo.png" alt="Edition Kids" className="h-16 w-auto" />
+        <img src="/images/icon-newspaper.png" alt="Edition Kids" className="h-20 w-auto" />
       </div>
 
       {/* Heading */}
