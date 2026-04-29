@@ -99,6 +99,10 @@ export default function DashboardPage() {
   const [toast, setToast] = useState<string | null>(null)
   const [bypassFilter, setBypassFilter] = useState(false)
 
+  // Debug info for backend diagnostics — shows last generate response
+  const [lastGenerateDebug, setLastGenerateDebug] = useState<Record<string, unknown> | null>(null)
+  const [showDebug, setShowDebug] = useState(false)
+
   // ── Escape key closes modals ─────────────────────────────────────────────
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -227,6 +231,16 @@ export default function DashboardPage() {
         body: JSON.stringify(generateBody),
       })
       console.log('[generate] response:', result)
+      setLastGenerateDebug({
+        request_body: generateBody,
+        edition_id: result.edition_id,
+        generation_time_seconds: result.generation_time_seconds,
+        cache_hits: result.cache_hits,
+        cache_misses: result.cache_misses,
+        article_count: result.article_count,
+        generated_at: new Date().toISOString(),
+      })
+      setShowDebug(true)
       const newEditionId = String(result.edition_id)
       const updated: Edition[] = await apiFetch(
         `/api/editions?briefing_id=${selectedPaper.briefing_id}`
@@ -661,6 +675,32 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* Backend diagnostics panel — shows after each generate */}
+        {lastGenerateDebug && (
+          <div className="mb-4">
+            <button
+              onClick={() => setShowDebug(v => !v)}
+              className="text-[10px] font-semibold uppercase tracking-[1px] text-[#4a4a48] hover:text-[#1c1c1a] flex items-center gap-1"
+            >
+              <span>{showDebug ? '▾' : '▸'}</span> Last generate diagnostics
+            </button>
+            {showDebug && (
+              <div className="mt-2 bg-[#f4f1ea] border border-[#ded4c4] rounded-xl p-4 font-mono text-[11px] text-[#4a4a48] leading-relaxed">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="font-bold text-[#1c1c1a]">Copy this for backend support:</span>
+                  <button
+                    onClick={() => navigator.clipboard.writeText(JSON.stringify(lastGenerateDebug, null, 2))}
+                    className="text-[10px] font-semibold uppercase tracking-[1px] bg-white border border-[#ded4c4] px-2 py-1 rounded-lg hover:bg-[#ded4c4] transition-colors"
+                  >
+                    Copy JSON
+                  </button>
+                </div>
+                <pre className="whitespace-pre-wrap break-all">{JSON.stringify(lastGenerateDebug, null, 2)}</pre>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Loading articles */}
         {paperState === 'loading' && (
