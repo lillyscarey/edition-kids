@@ -12,4 +12,4 @@ export const GENERATE_TIMEOUT_MS = 180_000
 /** Deploy moment for the kids-tone fix. Editions generated before this
  *  timestamp ran through the adult pipeline and may contain leaked content;
  *  the dashboard hides them from auto-load and badges them in the dropdown. */
-export const KIDS_TONE_DEPLOYED_AT = '2026-04-28T23:00:20Z'
+export const KIDS_TONE_DEPLOYED_AT = '2026-04-28T00:00:00Z'
