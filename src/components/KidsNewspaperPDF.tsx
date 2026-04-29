@@ -86,26 +86,15 @@ function themeFor(category: string): CategoryTheme {
 const PAGE_H_PAD = 44
 const PAGE_TOP_PAD = 36
 
-// ── Masthead icon scatter config ─────────────────────────────────────────────
-// Each icon is absolutely positioned inside a 595pt-wide × 150pt-tall masthead.
-// Coords are in pt from the masthead's top-left. Tweak any single icon here.
-// Rotation in degrees. Only ~half the icons are rotated to avoid feeling busy.
-const MASTHEAD_HEIGHT = 150
-type IconSpot = {
-  key: keyof typeof EMOJIS
-  left: number
-  top: number
-  size: number
-  rotate?: number
-}
-const ICON_SCATTER: IconSpot[] = [
-  { key: 'newspaper', left: 60,  top: 22, size: 42, rotate: -10 },
-  { key: 'moon',      left: 175, top: 12, size: 32                  },
-  { key: 'rocket',    left: 430, top: 18, size: 46, rotate: 12 },
-  { key: 'palette',   left: 30,  top: 78, size: 38                  },
-  { key: 'telescope', left: 510, top: 70, size: 40, rotate: -8  },
-  { key: 'guitar',    left: 130, top: 92, size: 36, rotate: 14  },
+// ── Masthead icon row config ──────────────────────────────────────────────────
+// Icons rendered left-to-right in a single straight row below the title.
+// Order here controls display order.
+const ICON_ROW: (keyof typeof EMOJIS)[] = [
+  'newspaper', 'palette', 'rocket', 'telescope', 'moon', 'guitar',
 ]
+// Consistent max-height for every icon; width scales proportionally (square
+// source images so width === height, but react-pdf respects aspect ratio).
+const ICON_SIZE = 34
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
@@ -118,26 +107,22 @@ const styles = StyleSheet.create({
   },
 
   // ── Masthead ──────────────────────────────────────────────────────────────
-  // Outer container spans full page width via negative margins; icons inside
-  // use absolute positioning to scatter around the centered title block.
+  // Flex column: title block → icon row → divider.
+  // Outer container spans full page width via negative margins.
   mastheadOuter: {
-    position: 'relative',
     marginTop: -PAGE_TOP_PAD,
     marginHorizontal: -PAGE_H_PAD,
-    height: MASTHEAD_HEIGHT,
+    paddingTop: PAGE_TOP_PAD + 10,
+    paddingHorizontal: PAGE_H_PAD,
     backgroundColor: PALETTE.pageBg,
+    flexDirection: 'column',
+    alignItems: 'center',
     marginBottom: 14,
   },
-  mastheadIcon: {
-    position: 'absolute',
-  },
-  // Title block — centered over the scattered icons.
-  mastheadCenter: {
-    position: 'absolute',
-    top: 58,
-    left: 0,
-    right: 0,
+  // Title + date — centered, no icons around them
+  mastheadTextBlock: {
     alignItems: 'center',
+    marginBottom: 14,
   },
   mastheadTitle: {
     fontSize: 18,
@@ -153,13 +138,23 @@ const styles = StyleSheet.create({
     marginTop: 4,
     letterSpacing: 0.5,
   },
+  // Icon row — all icons on a single baseline, equally spaced
+  mastheadIconRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 12,
+  },
+  mastheadIcon: {
+    width: ICON_SIZE,
+    height: ICON_SIZE,
+  },
   mastheadDivider: {
-    position: 'absolute',
-    bottom: 4,
-    left: PAGE_H_PAD,
-    right: PAGE_H_PAD,
     height: 1,
+    width: '100%',
     backgroundColor: PALETTE.divider,
+    marginBottom: 0,
   },
 
   // Daily Fun Fact — warm beige with mustard accent
@@ -293,29 +288,24 @@ export default function KidsNewspaperPDF({ articles, userName, date, imageBaseUr
         {/* ── Masthead ── */}
         <View style={styles.mastheadOuter}>
 
-          {/* Scattered icons — positions defined in ICON_SCATTER config */}
-          {ICON_SCATTER.map(spot => (
-            <Image
-              key={spot.key}
-              src={img(EMOJIS[spot.key])}
-              style={{
-                ...styles.mastheadIcon,
-                left: spot.left,
-                top: spot.top,
-                width: spot.size,
-                height: spot.size,
-                ...(spot.rotate ? { transform: `rotate(${spot.rotate}deg)` } : {}),
-              }}
-            />
-          ))}
-
-          {/* Title + date — centered over the scatter */}
-          <View style={styles.mastheadCenter}>
+          {/* Title + date — clean, centered, no icons around them */}
+          <View style={styles.mastheadTextBlock}>
             <Text style={styles.mastheadTitle}>{userName}&apos;s Daily Edition</Text>
             <Text style={styles.mastheadDate}>{date}</Text>
           </View>
 
-          {/* Earthy divider */}
+          {/* Icon row — single straight line, equally spaced */}
+          <View style={styles.mastheadIconRow}>
+            {ICON_ROW.map(key => (
+              <Image
+                key={key}
+                src={img(EMOJIS[key])}
+                style={styles.mastheadIcon}
+              />
+            ))}
+          </View>
+
+          {/* Divider */}
           <View style={styles.mastheadDivider} />
 
         </View>
